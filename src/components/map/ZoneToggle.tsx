@@ -20,6 +20,7 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({ activeIndex, onToggle }) => {
         activeIndex={activeIndex}
         onToggle={onToggle}
         activeColor={activeIndex === 0 ? Colors.primaryAccent : Colors.danger}
+        inactiveTextColor={Colors.textPrimary}
       />
     </View>
   );
@@ -28,7 +29,7 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({ activeIndex, onToggle }) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Spacing.lg + 50,
+    top: Spacing.xl,
     left: Spacing.xxl,
     right: Spacing.xxl,
     zIndex: 10,

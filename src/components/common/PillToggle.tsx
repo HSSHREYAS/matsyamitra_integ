@@ -82,8 +82,10 @@ const PillToggle: React.FC<PillToggleProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: Colors.cardBackground,
     borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: Colors.dividerLight,
     padding: 3,
     position: 'relative',
     overflow: 'hidden',

@@ -4,7 +4,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
-import MapView from 'react-native-maps';
+import MapView, { type Region } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import ZoneToggle from '../components/map/ZoneToggle';
@@ -21,23 +21,42 @@ import {
 import type { FishingZone, RiskZone } from '../data/mockZones';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+const ZOOM_STEP = 0.5;
+const MIN_DELTA = 0.02;
+const MAX_LATITUDE_DELTA = 30;
+const MAX_LONGITUDE_DELTA = 30;
+
 const MapScreen: React.FC = () => {
   const [activeMode, setActiveMode] = useState(0); // 0 = Fishing, 1 = Risk
   const [selectedFishingZone, setSelectedFishingZone] = useState<FishingZone | null>(
     mockFishingZones[0]
   );
   const [selectedRiskZone, setSelectedRiskZone] = useState<RiskZone | null>(null);
+  const [region, setRegion] = useState<Region>(mapInitialRegion);
   const mapRef = useRef<MapView>(null);
 
   const handleZoomIn = () => {
-    // Zoom in implementation using mapRef
+    const nextRegion = {
+      ...region,
+      latitudeDelta: Math.max(region.latitudeDelta * ZOOM_STEP, MIN_DELTA),
+      longitudeDelta: Math.max(region.longitudeDelta * ZOOM_STEP, MIN_DELTA),
+    };
+    setRegion(nextRegion);
+    mapRef.current?.animateToRegion(nextRegion, 250);
   };
 
   const handleZoomOut = () => {
-    // Zoom out implementation using mapRef
+    const nextRegion = {
+      ...region,
+      latitudeDelta: Math.min(region.latitudeDelta / ZOOM_STEP, MAX_LATITUDE_DELTA),
+      longitudeDelta: Math.min(region.longitudeDelta / ZOOM_STEP, MAX_LONGITUDE_DELTA),
+    };
+    setRegion(nextRegion);
+    mapRef.current?.animateToRegion(nextRegion, 250);
   };
 
   const handleMyLocation = () => {
+    setRegion(mapInitialRegion);
     mapRef.current?.animateToRegion(mapInitialRegion, 500);
   };
 
@@ -66,7 +85,10 @@ const MapScreen: React.FC = () => {
           ref={mapRef}
           style={styles.map}
           initialRegion={mapInitialRegion}
-          mapType="standard">
+          mapType="standard"
+          toolbarEnabled={false}
+          rotateEnabled={false}
+          onRegionChangeComplete={setRegion}>
           {activeMode === 0 && (
             <FishingZoneOverlay
               zones={mockFishingZones}
