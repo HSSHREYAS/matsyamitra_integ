@@ -71,6 +71,11 @@ yarn-error.log
 # testing
 /coverage
 
+# Python analytics
+**/.venv/
+__pycache__/
+*.py[cod]
+
 # Yarn
 .yarn/*
 !.yarn/patches
