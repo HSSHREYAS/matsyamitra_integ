@@ -1,18 +1,17 @@
-# Current Phase: Environmental Data Storage Preparation
+# Current Phase: Analytics Input Preparation
 
 Last updated: 2026-07-05
 
 ## Objective
 
-Prepare the validated Earth observation output for future PostgreSQL/PostGIS integration without implementing the database yet.
+Prepare future analytics modules to consume validated environmental observations through the repository layer without accessing SQL directly.
 
 ## Deliverables
 
-- Review the standardized DataFrame schema for database readiness
-- Decide storage table structure for environmental observations
-- Decide geospatial representation for sampling points
-- Define migration approach for PostgreSQL + PostGIS
-- Keep analytics output independent from backend and UI concerns
+- Define query contracts needed by future PFZ and risk scoring
+- Keep analytics independent from SQLAlchemy models
+- Confirm persistence output remains the canonical input for future analytics
+- Avoid PFZ/risk scoring until the next analytics phase is explicitly started
 
 ## Current Status
 
@@ -32,7 +31,14 @@ Prepare the validated Earth observation output for future PostgreSQL/PostGIS int
 | Quality Validation | DONE |
 | Cleaning Pipeline | DONE |
 | QA Report Generation | DONE |
-| PostgreSQL/PostGIS Integration | TODO |
+| SQLAlchemy Persistence Models | DONE |
+| Database Session Handling | DONE |
+| Repository Layer | DONE |
+| DataFrame Ingestion Layer | DONE |
+| Query Utilities | DONE |
+| Alembic-Ready Structure | DONE |
+| Persistence Unit Tests | DONE |
+| Live PostgreSQL Deployment | TODO |
 
 ## Tasks
 
@@ -53,8 +59,19 @@ Prepare the validated Earth observation output for future PostgreSQL/PostGIS int
 | Implement configurable cleaning policies | DONE |
 | Implement machine-readable and human-readable QA reports | DONE |
 | Add Python unit tests for QA pipeline | DONE |
-| Design PostgreSQL/PostGIS schema | TODO |
-| Integrate cleaned DataFrame with storage layer | TODO |
+| Add SQLAlchemy database configuration | DONE |
+| Implement `EnvironmentalObservation` ORM model | DONE |
+| Implement `ExtractionRun` ORM model | DONE |
+| Implement `DatasetMetadata` ORM model | DONE |
+| Implement transaction-safe session handling | DONE |
+| Implement reusable repository methods | DONE |
+| Implement validated DataFrame ingestion | DONE |
+| Implement duplicate observation handling | DONE |
+| Implement query helpers | DONE |
+| Implement rollback tests | DONE |
+| Add Alembic-ready migration structure | DONE |
+| Provision live PostgreSQL database | TODO |
+| Validate persistence against live PostgreSQL | TODO |
 
 ## Dependencies
 
@@ -62,7 +79,10 @@ Prepare the validated Earth observation output for future PostgreSQL/PostGIS int
 - Canonical AOI file at `analytics/data/geometry/karnataka_aoi.geojson`
 - Python packages already installed in `analytics/.venv`
 - Pandas for standardization, validation, cleaning, and reporting
-- Future PostgreSQL/PostGIS environment
+- SQLAlchemy ORM
+- Alembic
+- PostgreSQL driver `psycopg2-binary`
+- Future live PostgreSQL environment
 
 ## Risks
 
@@ -70,9 +90,11 @@ Prepare the validated Earth observation output for future PostgreSQL/PostGIS int
 - Chlorophyll availability depends on the requested analysis date.
 - Currents remain deferred until a maintained dataset is finalized.
 - Database schema must preserve scientific units and quality metadata.
+- Persistence tests currently use SQLite for isolated local validation; live PostgreSQL validation is still pending.
 
 ## Notes
 
 - The current canonical cleaned output columns are `Latitude`, `Longitude`, `Date`, `SST`, `WindSpeed`, `WaveHeight`, and `Chlorophyll`.
-- No PostgreSQL, REST API, PFZ scoring, risk scoring, heatmaps, or React Native UI work has been implemented in the analytics phases.
+- The persistence layer receives only validated DataFrames and is independent from Earth Engine, extraction, Node.js, and React Native.
+- No REST API, PFZ scoring, risk scoring, heatmaps, scheduling, retention cleanup, or React Native UI work has been implemented in Phase 4.
 - Documentation for the complete framework is available in `docs/DATA_EXTRACTION_FRAMEWORK.md`.

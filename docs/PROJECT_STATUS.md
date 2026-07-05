@@ -136,6 +136,9 @@ Implemented:
 - GeoPandas
 - Shapely
 - PyArrow
+- SQLAlchemy
+- Alembic
+- psycopg2-binary
 
 Planned:
 
@@ -243,11 +246,38 @@ Recent validation completed:
 - Phase 2 compact Earth Engine validation succeeded with SST, wind speed, wave height, and chlorophyll.
 - Phase 3 QA pipeline unit tests passed: 8 tests.
 - A compact real Earth Engine output was passed through the QA layer successfully.
+- Phase 4 persistence unit tests passed: 14 total analytics tests, including 6 persistence tests.
+- Persistence sanity checks covered table creation, insertion, duplicate handling, query operations, delete helper, schema validation, and rollback behavior.
 
 Known validation behavior:
 
 - Wave-height values can be missing for some sampled locations due to coastal/ocean coverage.
 - Chlorophyll validation succeeds for the default `2025-06-01` to `2025-06-02` analysis window.
+
+## Persistence Layer
+
+Phase 4 added a reusable persistence layer under `analytics/persistence`. This layer is independent from Earth Engine, extraction, analytics, React Native, and Node.js.
+
+Implemented modules:
+
+- `analytics/persistence/database.py`: SQLAlchemy engine creation and table creation/drop helpers.
+- `analytics/persistence/session.py`: transaction-safe session scope handling.
+- `analytics/persistence/models.py`: ORM models for environmental observations, extraction runs, and dataset metadata.
+- `analytics/persistence/repository.py`: reusable CRUD/query operations that return plain records instead of exposing ORM models.
+- `analytics/persistence/ingest.py`: validated DataFrame schema validation, run tracking, dataset metadata upsert, and observation insertion.
+- `analytics/persistence/queries.py`: simple query helpers for future analytics modules.
+- `analytics/persistence/exceptions.py`: persistence-specific custom exceptions.
+- `analytics/persistence/migrations`: Alembic-ready migration structure.
+
+Implemented tables:
+
+- `environmental_observations`
+- `extraction_runs`
+- `dataset_metadata`
+
+The persistence layer stores only validated environmental observations with `Latitude`, `Longitude`, `Date`, `SST`, `WindSpeed`, `WaveHeight`, and `Chlorophyll`.
+
+Retention configuration exists through `MATSYAMITRA_DATA_RETENTION_DAYS` with a default of `7`, but automatic deletion and scheduled cleanup are intentionally not implemented in this phase.
 
 ## Google Earth Engine Datasets Selected
 
@@ -294,6 +324,8 @@ Current important folders:
 - `analytics/report.py`: QA report generation
 - `analytics/validation.py`: framework and pipeline validation CLI
 - `analytics/tests`: Python unit tests for the analytics framework
+- `analytics/persistence`: SQLAlchemy persistence layer for validated environmental observations
+- `analytics/persistence/migrations`: Alembic-ready migration structure
 - `docs`: project documentation
 
 ## Important Implementation Decisions
@@ -317,6 +349,9 @@ Current important folders:
 - Shared spatial sampling is used across all datasets so merged rows represent the same location.
 - Scientific units, valid ranges, and cleaning policies live in configuration and metadata.
 - The cleaned QA DataFrame is the canonical input for future PostgreSQL/PostGIS and analytics phases.
+- The persistence layer receives only validated DataFrames and must remain independent from Earth Engine and extraction code.
+- Future analytics modules should use repository/query helpers instead of writing SQL directly.
+- Automatic retention cleanup is deferred to a future infrastructure/scheduling phase.
 
 ## Completed Modules
 
@@ -361,6 +396,15 @@ Current important folders:
 - Configurable cleaning pipeline implemented
 - Human-readable and machine-readable QA reporting implemented
 - Python unit tests added for the QA pipeline
+- SQLAlchemy ORM persistence models implemented
+- Transaction-safe session management implemented
+- DataFrame ingestion layer implemented
+- Extraction run tracking implemented
+- Dataset metadata persistence implemented
+- Repository/query layer implemented
+- Duplicate observation handling implemented
+- Alembic-ready migration structure added
+- Persistence unit tests added
 - Local documentation system initialized
 
 ## Pending Modules
@@ -368,11 +412,16 @@ Current important folders:
 - Backend integration for analytics outputs
 - Authentication
 - Real weather/marine API integration
+- Live PostgreSQL database provisioning
+- Live PostgreSQL persistence validation
+- PostGIS geometry migration
+- Retention cleanup utility
+- Scheduled ingestion workflow
 - INCOIS PFZ ingestion
 - Rule-based PFZ score calculation
 - Rule-based risk score calculation
 - Heatmap generation
-- PostgreSQL/PostGIS schema
+- PostgreSQL/PostGIS live deployment
 - Notifications
 - Deployment
 - Production signing and release configuration
@@ -386,6 +435,7 @@ Current important folders:
 - Wave-height values may be missing for some sampled locations depending on coastal/ocean mask coverage.
 - Chlorophyll availability depends on the requested analysis date.
 - Currents dataset selection remains pending because available HYCOM datasets are historical.
+- Persistence tests currently use SQLite for isolated local validation; live PostgreSQL validation is still pending.
 - Google Maps key is configured for local Android builds; production builds will need release SHA-1 restrictions.
 - Some generated text or encoding artifacts may remain from earlier UI generation.
 - Lint had historical unused-variable warnings in files outside the latest map edits.
@@ -398,7 +448,7 @@ Current important folders:
 - Satellite extraction will happen server-side or in a separate processing service, not directly in the mobile app.
 - Government/advisory scraping, if needed, will happen in backend jobs.
 - The canonical AOI for extraction is `analytics/data/geometry/karnataka_aoi.geojson`.
-- The current analytics output is prepared for future storage but is not yet persisted to PostgreSQL/PostGIS.
+- The current analytics output can be ingested through the persistence layer, but live PostgreSQL deployment is still pending.
 
 ## Environment Variables
 
@@ -406,10 +456,20 @@ Current local Android property:
 
 - `GOOGLE_MAPS_API_KEY`: stored in `android/local.properties`
 
+Current analytics/persistence properties:
+
+- `MATSYAMITRA_DATABASE_URL`: required for live PostgreSQL connections.
+- `MATSYAMITRA_DATABASE_ECHO`: optional SQLAlchemy SQL logging toggle.
+- `MATSYAMITRA_DATABASE_POOL_PRE_PING`: optional SQLAlchemy connection health check toggle.
+- `MATSYAMITRA_DATABASE_SCHEMA_VERSION`: persistence schema version.
+- `MATSYAMITRA_OBSERVATIONS_TABLE`: optional observations table name override.
+- `MATSYAMITRA_RUNS_TABLE`: optional extraction runs table name override.
+- `MATSYAMITRA_METADATA_TABLE`: optional dataset metadata table name override.
+- `MATSYAMITRA_DATA_RETENTION_DAYS`: retention policy value for future cleanup tooling, default `7`.
+
 Planned:
 
 - backend API base URL
-- database URL
 - Google Earth Engine credentials
 - Firebase configuration
 - weather API credentials
@@ -421,6 +481,8 @@ Implemented:
 - Google Maps Platform: Maps SDK for Android
 - Google Earth Engine
 - Google Cloud Project linked to Earth Engine
+- SQLAlchemy ORM
+- Alembic migration tooling
 
 Planned:
 
@@ -443,3 +505,4 @@ Planned:
 - 2026-07: Reusable Earth Engine extraction framework implemented and validated with NOAA OISST v2.1 as a validation dataset only.
 - 2026-07: Multi-dataset environmental pipeline implemented for SST, wind speed, wave height, and chlorophyll with shared spatial sampling and temporal alignment.
 - 2026-07: Environmental data standardization and quality assurance layer implemented with metadata-driven validation, cleaning, reports, schema definitions, and unit tests.
+- 2026-07: SQLAlchemy persistence layer implemented for validated environmental observations with repository/query abstractions, ingestion summaries, extraction run tracking, dataset metadata storage, Alembic-ready structure, duplicate handling, and rollback-tested unit tests.

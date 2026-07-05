@@ -117,6 +117,37 @@ class CleaningConfig:
             )
 
 
+@dataclass(frozen=True)
+class PersistenceTableNames:
+    environmental_observations: str = "environmental_observations"
+    extraction_runs: str = "extraction_runs"
+    dataset_metadata: str = "dataset_metadata"
+
+
+@dataclass(frozen=True)
+class DatabaseConfig:
+    database_url: str
+    echo_sql: bool = False
+    pool_pre_ping: bool = True
+    schema_version: str = "1"
+    table_names: PersistenceTableNames = field(default_factory=PersistenceTableNames)
+
+    def __post_init__(self) -> None:
+        if not self.database_url:
+            raise ValueError(
+                "DatabaseConfig.database_url is required. Set MATSYAMITRA_DATABASE_URL."
+            )
+
+
+@dataclass(frozen=True)
+class RetentionConfig:
+    data_retention_days: int = 7
+
+    def __post_init__(self) -> None:
+        if self.data_retention_days <= 0:
+            raise ValueError("RetentionConfig.data_retention_days must be greater than zero.")
+
+
 DEFAULT_ANALYSIS_DATE = AnalysisDateConfig(
     analysis_date=os.getenv("MATSYAMITRA_ANALYSIS_DATE", "2025-06-01"),
     window_days=int(os.getenv("MATSYAMITRA_ANALYSIS_WINDOW_DAYS", "1")),
@@ -191,3 +222,24 @@ PARAMETER_METADATA = {
 
 RECORD_ID_COLUMNS = ("Latitude", "Longitude", "Date")
 DEFAULT_CLEANING_CONFIG = CleaningConfig()
+DEFAULT_RETENTION_CONFIG = RetentionConfig(
+    data_retention_days=int(os.getenv("MATSYAMITRA_DATA_RETENTION_DAYS", "7")),
+)
+DEFAULT_PERSISTENCE_TABLE_NAMES = PersistenceTableNames(
+    environmental_observations=os.getenv(
+        "MATSYAMITRA_OBSERVATIONS_TABLE",
+        "environmental_observations",
+    ),
+    extraction_runs=os.getenv("MATSYAMITRA_RUNS_TABLE", "extraction_runs"),
+    dataset_metadata=os.getenv("MATSYAMITRA_METADATA_TABLE", "dataset_metadata"),
+)
+
+
+def load_database_config_from_env() -> DatabaseConfig:
+    return DatabaseConfig(
+        database_url=os.getenv("MATSYAMITRA_DATABASE_URL", ""),
+        echo_sql=os.getenv("MATSYAMITRA_DATABASE_ECHO", "false").lower() == "true",
+        pool_pre_ping=os.getenv("MATSYAMITRA_DATABASE_POOL_PRE_PING", "true").lower() == "true",
+        schema_version=os.getenv("MATSYAMITRA_DATABASE_SCHEMA_VERSION", "1"),
+        table_names=DEFAULT_PERSISTENCE_TABLE_NAMES,
+    )
