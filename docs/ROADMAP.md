@@ -18,10 +18,13 @@ Last updated: 2026-07-05
 - Unified Environmental DataFrame
 - Environmental Data Standardization
 - Quality Assurance Pipeline
+- SQLAlchemy Persistence Layer
+- Validated DataFrame Ingestion
+- Repository Query Layer
 
 ## Current
 
-- PostgreSQL + PostGIS Storage Preparation
+- Live PostgreSQL Provisioning
 
 ## Future
 
