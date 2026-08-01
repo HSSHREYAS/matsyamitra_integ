@@ -1,6 +1,6 @@
 # MatsyaMitra Roadmap
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Completed
 
@@ -26,16 +26,18 @@ Last updated: 2026-07-31
 - Risk Score Generation
 - Confidence Score Generation
 - Scoring Explanation Generation
+- AnalyticsResults Persistence
+- End-to-End Environmental Persistence Pipeline
+- One-Command Pipeline Entry Point
 
 ## Current
 
-- Scored Output Integration Preparation
+- Live PostgreSQL and Backend API Integration Preparation
 
 ## Future
 
 - Live PostgreSQL Provisioning
 - PostgreSQL + PostGIS
-- Scored Output Persistence
 - Automated Data Ingestion
 - Data Analytics Calibration using Pandas and NumPy
 - Heatmap Generation

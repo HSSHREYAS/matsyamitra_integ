@@ -1,6 +1,6 @@
 # MatsyaMitra Data Extraction Framework
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Purpose
 
@@ -15,6 +15,7 @@ The framework is not a fish prediction model. It is a reusable environmental dat
 - Phase 3: data standardization and quality assurance
 - Phase 4: SQLAlchemy persistence layer for validated observations
 - Phase 5: deterministic PFZ, risk, confidence, and explanation scoring
+- Phase 6: end-to-end persistence pipeline connecting extraction, QA, observation storage, scoring, and analytics-result storage
 
 Live PostgreSQL deployment, REST API integration, heatmap generation, machine learning, scheduling, and React Native UI integration are not implemented in this framework yet.
 
@@ -74,6 +75,7 @@ analytics/
     explain.py
     engine.py
     tests.py
+  end_to_end_pipeline.py
   tests/
     test_quality_pipeline.py
     test_persistence.py
@@ -330,6 +332,33 @@ The scoring engine is documented separately in:
 docs/DATA_ANALYTICS_MODEL.md
 ```
 
+## Phase 6: End-to-End Persistence Pipeline
+
+Phase 6 connects the existing framework components into one operational backend workflow.
+
+Implemented behavior:
+
+- Initialize Earth Engine using the existing authenticated setup.
+- Run the environmental extraction pipeline.
+- Run quality assurance and standardization.
+- Store factual observations in `environmental_observations`.
+- Retrieve newly inserted or updated observations for analytics.
+- Run deterministic PFZ, risk, confidence, and explanation scoring.
+- Store derived outputs in `analytics_results`.
+- Return a structured execution summary.
+
+The root entry point is:
+
+```powershell
+python run_pipeline.py
+```
+
+The pipeline is documented separately in:
+
+```text
+docs/DATABASE_INTEGRATION_PIPELINE.md
+```
+
 ## Known Limitations
 
 - Wave-height values may be missing for some sampled coastal locations.
@@ -337,7 +366,7 @@ docs/DATA_ANALYTICS_MODEL.md
 - Currents are deferred until a maintained dataset is finalized.
 - Live PostgreSQL/PostGIS deployment is not implemented yet.
 - REST API integration is not implemented yet.
-- Scored outputs are not persisted or served through REST APIs yet.
+- Scored outputs are persisted by the Phase 6 pipeline but are not served through REST APIs yet.
 - Heatmap generation is not implemented yet.
 
 ## Current Output Contract

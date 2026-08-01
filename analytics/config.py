@@ -122,6 +122,20 @@ class PersistenceTableNames:
     environmental_observations: str = "environmental_observations"
     extraction_runs: str = "extraction_runs"
     dataset_metadata: str = "dataset_metadata"
+    analytics_results: str = "analytics_results"
+
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    duplicate_policy: str = "skip"
+    analytics_version: str = "deterministic-v1"
+
+    def __post_init__(self) -> None:
+        if self.duplicate_policy not in {"skip", "replace", "update"}:
+            raise ValueError("PipelineConfig.duplicate_policy must be 'skip', 'replace', or 'update'.")
+
+        if not self.analytics_version:
+            raise ValueError("PipelineConfig.analytics_version is required.")
 
 
 @dataclass(frozen=True)
@@ -232,6 +246,11 @@ DEFAULT_PERSISTENCE_TABLE_NAMES = PersistenceTableNames(
     ),
     extraction_runs=os.getenv("MATSYAMITRA_RUNS_TABLE", "extraction_runs"),
     dataset_metadata=os.getenv("MATSYAMITRA_METADATA_TABLE", "dataset_metadata"),
+    analytics_results=os.getenv("MATSYAMITRA_ANALYTICS_RESULTS_TABLE", "analytics_results"),
+)
+DEFAULT_PIPELINE_CONFIG = PipelineConfig(
+    duplicate_policy=os.getenv("MATSYAMITRA_DUPLICATE_POLICY", "skip").lower(),
+    analytics_version=os.getenv("MATSYAMITRA_ANALYTICS_VERSION", "deterministic-v1"),
 )
 
 

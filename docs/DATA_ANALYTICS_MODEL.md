@@ -1,6 +1,6 @@
 # MatsyaMitra Deterministic Data Analytics Model
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Purpose
 
@@ -19,13 +19,13 @@ Implemented:
 - Single-record scoring through `score_record()`
 - Batch DataFrame scoring through `score_dataframe()`
 - Deterministic tests for scoring behavior
+- Storage of generated analytics results through the Phase 6 pipeline
 
 Not implemented in this phase:
 
 - Heatmaps
 - REST APIs
 - React Native changes
-- Database schema changes for scored outputs
 - Scheduling or automation
 - INCOIS advisory scraping
 - SST front detection
@@ -291,7 +291,7 @@ analytics\.venv\Scripts\python.exe -B -m unittest discover -s analytics\tests -v
 Current result:
 
 ```text
-27 tests passed
+32 tests passed
 ```
 
 Scoring tests cover:
@@ -327,7 +327,9 @@ Deterministic Scoring Engine
         |
 Scored Environmental Output
         |
-Future: Database/API/Heatmaps/Mobile Visualization
+AnalyticsResults Table
+        |
+Future: API/Heatmaps/Mobile Visualization
 ```
 
 ## Known Limitations
@@ -337,6 +339,6 @@ Future: Database/API/Heatmaps/Mobile Visualization
 - The model does not detect SST fronts yet.
 - The model does not include ocean currents yet.
 - The model does not generate heatmaps yet.
-- Scores are not yet persisted in a dedicated scored-output table.
+- Scores are persisted by the Phase 6 pipeline in `analytics_results`.
 - Scores are not yet served through the backend API.
 - The React Native app still uses mock PFZ/risk overlays until backend integration is implemented.

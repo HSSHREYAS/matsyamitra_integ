@@ -1,6 +1,6 @@
 # MatsyaMitra Project Status
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Overall Project Overview
 
@@ -10,7 +10,7 @@ The project direction is deliberately rule-based and analytics-driven. Heavy ML 
 
 ## Current Software Architecture
 
-The current codebase is a React Native Android application with mock data powering the UI, plus an existing Node.js backend per project context. The Earth Engine analytics framework now supports extraction, multi-dataset integration, standardization, quality validation, cleaning, reporting, persistence abstractions, and deterministic environmental scoring. These analytics outputs are not yet integrated with the backend or mobile API flow.
+The current codebase is a React Native Android application with mock data powering the UI, plus an existing Node.js backend per project context. The Earth Engine analytics framework now supports extraction, multi-dataset integration, standardization, quality validation, cleaning, reporting, persistence abstractions, deterministic environmental scoring, and an end-to-end persistence pipeline. These analytics outputs are not yet integrated with the backend or mobile API flow.
 
 Current runtime layers:
 
@@ -24,6 +24,7 @@ Current runtime layers:
 - Pandas-based data standardization and quality assurance layer
 - SQLAlchemy persistence layer for validated environmental observations
 - Deterministic PFZ, risk, confidence, and explanation scoring engine
+- End-to-end environmental data persistence pipeline
 
 ## Frontend Architecture
 
@@ -75,7 +76,7 @@ Current and planned backend stack:
 
 ## Data Pipeline Architecture
 
-Current state: Google Earth Engine foundation is configured and verified. The analytics framework can extract selected environmental datasets, merge them into one unified environmental DataFrame, transform that output into a standardized quality-checked DataFrame, persist validated observations through a repository layer, and generate deterministic PFZ/risk/confidence scores for each validated observation.
+Current state: Google Earth Engine foundation is configured and verified. The analytics framework can extract selected environmental datasets, merge them into one unified environmental DataFrame, transform that output into a standardized quality-checked DataFrame, persist validated observations through a repository layer, generate deterministic PFZ/risk/confidence scores for each stored observation, and persist those analytics results in a linked table.
 
 Current and planned pipeline:
 
@@ -90,13 +91,16 @@ Current and planned pipeline:
 9. Validate missing values, invalid values, outliers, duplicates, and identity fields
 10. Clean observations using configurable policies
 11. Generate machine-readable and human-readable QA reports
-12. Store validated observations through the persistence layer when a configured database is available
-13. Apply deterministic PFZ suitability, marine risk, confidence, and explanation scoring
-14. Later: ingest official PFZ advisories, marine weather, and hazard alerts
-15. Later: normalize scored outputs into a backend data model
-16. Later: generate map layers for fishing zones and risk zones
-17. Later: store spatial outputs in PostGIS
-18. Later: serve mobile-ready API responses
+12. Store validated observations in `environmental_observations`
+13. Retrieve newly inserted or updated observations for analytics
+14. Apply deterministic PFZ suitability, marine risk, confidence, and explanation scoring
+15. Store analytics outputs in `analytics_results`
+16. Return an execution summary
+17. Later: ingest official PFZ advisories, marine weather, and hazard alerts
+18. Later: normalize scored outputs into a backend API model
+19. Later: generate map layers for fishing zones and risk zones
+20. Later: store spatial outputs in PostGIS
+21. Later: serve mobile-ready API responses
 
 ## Database Architecture
 
@@ -112,6 +116,7 @@ Implemented analytics tables:
 - `environmental_observations`
 - `extraction_runs`
 - `dataset_metadata`
+- `analytics_results`
 
 Planned application/backend entities:
 
@@ -256,9 +261,11 @@ Recent validation completed:
 - A compact real Earth Engine output was passed through the QA layer successfully.
 - Phase 4 persistence unit tests passed, including 6 persistence tests.
 - Phase 5 deterministic scoring tests passed.
-- Current local analytics suite passed: 27 tests.
+- Phase 6 end-to-end persistence pipeline tests passed.
+- Current local analytics suite passed: 32 tests.
 - Persistence sanity checks covered table creation, insertion, duplicate handling, query operations, delete helper, schema validation, and rollback behavior.
 - Scoring sanity checks covered ideal, moderate, poor, dangerous, missing-parameter, invalid-value, freshness, category, DataFrame, and weight-redistribution behavior.
+- End-to-end pipeline sanity checks covered observation insertion, analytics-result storage, duplicate skip/update behavior, foreign-key-linked results, and transaction rollback when analytics generation fails.
 
 Known validation behavior:
 
@@ -319,7 +326,28 @@ Scoring outputs:
 
 The PFZ score uses SST, chlorophyll, and wind suitability. The risk score uses wave height and wind risk. Missing or invalid parameters do not crash the engine; available parameter weights are redistributed within the relevant score. Confidence is reduced based on missing/invalid inputs and observation freshness.
 
-Phase 5 validation completed successfully with 27 analytics tests passing, including persistence, QA, and scoring tests.
+Phase 5 validation completed successfully and is now covered by the current 32-test analytics suite.
+
+## End-to-End Persistence Pipeline
+
+Phase 6 connected the existing extraction, quality assurance, persistence, and deterministic analytics components into one operational backend pipeline.
+
+Implemented modules:
+
+- `analytics/end_to_end_pipeline.py`: orchestrates Earth Engine initialization, extraction, QA, standardized observation persistence, deterministic scoring, analytics result persistence, and execution summary generation.
+- `run_pipeline.py`: root command-line entry point for running the full pipeline with one command.
+- `analytics/tests/test_end_to_end_pipeline.py`: tests for observation storage, analytics result storage, duplicate skip/update behavior, and rollback on analytics failure.
+
+Implemented database behavior:
+
+- `environmental_observations` remains factual-only and is the source of truth for validated environmental records.
+- `analytics_results` stores deterministic PFZ, risk, confidence, and explanation outputs.
+- Each analytics result references one environmental observation through a foreign key.
+- Duplicate observation handling supports configurable `skip`, `replace`, and `update` policies.
+- The database insertion and analytics storage stages execute inside one transaction.
+- If observation insertion, analytics generation, or analytics-result insertion fails, the transaction rolls back.
+
+The analytics engine still never communicates with Google Earth Engine. It receives only validated environmental observations that have passed through the extraction and QA pipeline.
 
 ## Google Earth Engine Datasets Selected
 
@@ -369,6 +397,8 @@ Current important folders:
 - `analytics/persistence`: SQLAlchemy persistence layer for validated environmental observations
 - `analytics/persistence/migrations`: Alembic-ready migration structure
 - `analytics/scoring`: deterministic PFZ, risk, confidence, and explanation scoring engine
+- `analytics/end_to_end_pipeline.py`: Phase 6 operational pipeline connecting extraction, QA, persistence, and scoring
+- `run_pipeline.py`: one-command pipeline entry point
 - `docs`: project documentation
 
 ## Important Implementation Decisions
@@ -399,6 +429,9 @@ Current important folders:
 - Scoring modules consume validated observations only and must not call Earth Engine, SQLAlchemy, backend APIs, or UI code.
 - Missing PFZ/risk parameters trigger weight redistribution instead of hard failure.
 - Confidence combines parameter availability with data freshness.
+- Environmental observations and analytics results are separated into factual and derived tables.
+- `analytics_results` must reference `environmental_observations`; analytics results cannot exist without a source observation.
+- Phase 6 duplicate policy is configurable through `MATSYAMITRA_DUPLICATE_POLICY`.
 
 ## Completed Modules
 
@@ -458,6 +491,11 @@ Current important folders:
 - Human-readable scoring explanations implemented
 - Scoring DataFrame interface implemented
 - Scoring unit tests added
+- Analytics results table implemented
+- End-to-end persistence pipeline implemented
+- One-command `run_pipeline.py` entry point implemented
+- Configurable duplicate policy implemented for `skip`, `replace`, and `update`
+- Transaction rollback tests added for pipeline-level analytics failures
 - Local documentation system initialized
 
 ## Pending Modules
@@ -472,7 +510,6 @@ Current important folders:
 - Scheduled ingestion workflow
 - INCOIS PFZ ingestion
 - Heatmap generation
-- Scored output persistence/integration
 - Backend API integration for scored outputs
 - PostgreSQL/PostGIS live deployment
 - Notifications
@@ -482,7 +519,7 @@ Current important folders:
 ## Known Issues
 
 - Earth Engine extraction outputs are not integrated with the Node.js backend yet.
-- Deterministic scoring outputs are not persisted or exposed through REST APIs yet.
+- Deterministic scoring outputs are persisted by the Phase 6 pipeline but are not exposed through REST APIs yet.
 - All domain data in the app is mock data.
 - Map overlays are static mock geometry.
 - Heatmap layer is not implemented.
@@ -502,7 +539,7 @@ Current important folders:
 - Satellite extraction will happen server-side or in a separate processing service, not directly in the mobile app.
 - Government/advisory scraping, if needed, will happen in backend jobs.
 - The canonical AOI for extraction is `analytics/data/geometry/karnataka_aoi.geojson`.
-- The current analytics output can be ingested through the persistence layer, but live PostgreSQL deployment is still pending.
+- The current end-to-end pipeline can ingest validated observations and store analytics results through the persistence layer, but live PostgreSQL deployment is still pending.
 - The current scoring output can be generated from validated records, but the app still displays mock PFZ/risk overlays until backend/API integration is implemented.
 
 ## Environment Variables
@@ -520,7 +557,10 @@ Current analytics/persistence properties:
 - `MATSYAMITRA_OBSERVATIONS_TABLE`: optional observations table name override.
 - `MATSYAMITRA_RUNS_TABLE`: optional extraction runs table name override.
 - `MATSYAMITRA_METADATA_TABLE`: optional dataset metadata table name override.
+- `MATSYAMITRA_ANALYTICS_RESULTS_TABLE`: optional analytics results table name override.
 - `MATSYAMITRA_DATA_RETENTION_DAYS`: retention policy value for future cleanup tooling, default `7`.
+- `MATSYAMITRA_DUPLICATE_POLICY`: Phase 6 duplicate observation policy, supports `skip`, `replace`, or `update`.
+- `MATSYAMITRA_ANALYTICS_VERSION`: analytics version label stored with generated analytics results.
 
 Planned:
 
@@ -562,3 +602,4 @@ Planned:
 - 2026-07: Environmental data standardization and quality assurance layer implemented with metadata-driven validation, cleaning, reports, schema definitions, and unit tests.
 - 2026-07: SQLAlchemy persistence layer implemented for validated environmental observations with repository/query abstractions, ingestion summaries, extraction run tracking, dataset metadata storage, Alembic-ready structure, duplicate handling, and rollback-tested unit tests.
 - 2026-07: Deterministic environmental analytics engine implemented for PFZ suitability, marine risk, confidence scoring, and human-readable explanations with config-driven thresholds and unit-tested behavior.
+- 2026-08: End-to-end environmental data persistence pipeline implemented with factual observation storage, linked analytics result storage, configurable duplicate policies, one-command execution, and transaction rollback tests.

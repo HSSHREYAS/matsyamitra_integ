@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from analytics.metadata import list_parameter_metadata
 from analytics.persistence.exceptions import DuplicateObservationError, InsertionError
-from analytics.persistence.models import DatasetMetadata, EnvironmentalObservation, ExtractionRun
+from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun
 from analytics.schemas import EnvironmentalRecord
 
 
@@ -18,6 +18,21 @@ class ExtractionRunRecord:
     run_id: str
     retained_count: int
     status: str
+
+
+@dataclass(frozen=True)
+class ObservationInsertOutcome:
+    inserted_count: int
+    skipped_count: int
+    updated_count: int
+    replaced_count: int
+    observations_for_analytics: list[EnvironmentalObservation]
+
+
+@dataclass(frozen=True)
+class AnalyticsStorageOutcome:
+    generated_count: int
+    stored_count: int
 
 
 class EnvironmentalObservationRepository:
@@ -78,6 +93,111 @@ class EnvironmentalObservationRepository:
 
         return len(observations)
 
+    def insert_observations_with_policy(
+        self,
+        dataframe: pd.DataFrame,
+        run_id: str,
+        duplicate_policy: str,
+    ) -> ObservationInsertOutcome:
+        if duplicate_policy not in {"skip", "replace", "update"}:
+            raise InsertionError(
+                "duplicate_policy must be one of: skip, replace, update."
+            )
+
+        inserted_count = 0
+        skipped_count = 0
+        updated_count = 0
+        replaced_count = 0
+        observations_for_analytics: list[EnvironmentalObservation] = []
+
+        try:
+            for row in dataframe.itertuples(index=False):
+                observation_date = _to_date(row.Date)
+                existing = self._find_observation(
+                    latitude=float(row.Latitude),
+                    longitude=float(row.Longitude),
+                    observation_date=observation_date,
+                )
+
+                if existing is not None and duplicate_policy == "skip":
+                    skipped_count += 1
+                    continue
+
+                if existing is not None and duplicate_policy == "update":
+                    existing.sst = _optional_float(row.SST)
+                    existing.wind_speed = _optional_float(row.WindSpeed)
+                    existing.wave_height = _optional_float(row.WaveHeight)
+                    existing.chlorophyll = _optional_float(row.Chlorophyll)
+                    existing.run_id = run_id
+                    updated_count += 1
+                    observations_for_analytics.append(existing)
+                    continue
+
+                if existing is not None and duplicate_policy == "replace":
+                    self.session.delete(existing)
+                    self.session.flush()
+                    replaced_count += 1
+
+                observation = EnvironmentalObservation(
+                    latitude=float(row.Latitude),
+                    longitude=float(row.Longitude),
+                    observation_date=observation_date,
+                    sst=_optional_float(row.SST),
+                    wind_speed=_optional_float(row.WindSpeed),
+                    wave_height=_optional_float(row.WaveHeight),
+                    chlorophyll=_optional_float(row.Chlorophyll),
+                    run_id=run_id,
+                )
+                self.session.add(observation)
+                self.session.flush()
+                inserted_count += 1
+                observations_for_analytics.append(observation)
+        except SQLAlchemyError as exc:
+            raise InsertionError(f"Unable to insert environmental observations: {exc}") from exc
+
+        return ObservationInsertOutcome(
+            inserted_count=inserted_count,
+            skipped_count=skipped_count,
+            updated_count=updated_count,
+            replaced_count=replaced_count,
+            observations_for_analytics=observations_for_analytics,
+        )
+
+    def store_analytics_results(
+        self,
+        analytics_rows: list[dict[str, Any]],
+        analytics_version: str,
+    ) -> AnalyticsStorageOutcome:
+        try:
+            for row in analytics_rows:
+                self.session.query(AnalyticsResult).filter(
+                    AnalyticsResult.observation_id == int(row["observation_id"]),
+                    AnalyticsResult.analytics_version == analytics_version,
+                ).delete(synchronize_session=False)
+
+                self.session.add(
+                    AnalyticsResult(
+                        observation_id=int(row["observation_id"]),
+                        pfz_score=_optional_float(row.get("pfz_score")),
+                        pfz_category=str(row["pfz_category"]),
+                        risk_score=_optional_float(row.get("risk_score")),
+                        risk_category=str(row["risk_category"]),
+                        confidence_score=float(row["confidence_score"]),
+                        confidence_label=str(row["confidence_label"]),
+                        explanation=str(row["explanation"]),
+                        analytics_version=analytics_version,
+                    )
+                )
+
+            self.session.flush()
+        except SQLAlchemyError as exc:
+            raise InsertionError(f"Unable to store analytics results: {exc}") from exc
+
+        return AnalyticsStorageOutcome(
+            generated_count=len(analytics_rows),
+            stored_count=len(analytics_rows),
+        )
+
     def upsert_dataset_metadata(self, last_verified: date | None = None) -> int:
         count = 0
         for metadata in list_parameter_metadata():
@@ -135,6 +255,9 @@ class EnvironmentalObservationRepository:
     def count_rows(self) -> int:
         return int(self.session.scalar(select(func.count()).select_from(EnvironmentalObservation)) or 0)
 
+    def count_analytics_rows(self) -> int:
+        return int(self.session.scalar(select(func.count()).select_from(AnalyticsResult)) or 0)
+
     def get_latest_date(self) -> date | None:
         return self.session.scalar(select(func.max(EnvironmentalObservation.observation_date)))
 
@@ -164,6 +287,20 @@ class EnvironmentalObservationRepository:
             EnvironmentalObservation.observation_date,
             EnvironmentalObservation.latitude,
             EnvironmentalObservation.longitude,
+        )
+
+    def _find_observation(
+        self,
+        latitude: float,
+        longitude: float,
+        observation_date: date,
+    ) -> EnvironmentalObservation | None:
+        return self.session.scalar(
+            select(EnvironmentalObservation).where(
+                EnvironmentalObservation.latitude == latitude,
+                EnvironmentalObservation.longitude == longitude,
+                EnvironmentalObservation.observation_date == observation_date,
+            )
         )
 
     def _records_from_statement(

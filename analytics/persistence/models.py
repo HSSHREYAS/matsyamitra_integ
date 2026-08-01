@@ -47,7 +47,7 @@ class EnvironmentalObservation(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column("observation_id", Integer, primary_key=True, autoincrement=True)
     latitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     longitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     observation_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
@@ -67,6 +67,10 @@ class EnvironmentalObservation(Base):
     )
 
     run: Mapped[ExtractionRun] = relationship(back_populates="observations")
+    analytics_results: Mapped[list["AnalyticsResult"]] = relationship(
+        back_populates="observation",
+        cascade="all, delete-orphan",
+    )
 
 
 class DatasetMetadata(Base):
@@ -78,3 +82,32 @@ class DatasetMetadata(Base):
     resolution: Mapped[str | None] = mapped_column(String(64), nullable=True)
     description: Mapped[str] = mapped_column(String(1000), nullable=False)
     last_verified: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+
+class AnalyticsResult(Base):
+    __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.analytics_results
+    __table_args__ = (
+        UniqueConstraint(
+            "observation_id",
+            "analytics_version",
+            name="uq_analytics_result_observation_version",
+        ),
+    )
+
+    analytics_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    observation_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.environmental_observations}.observation_id"),
+        nullable=False,
+        index=True,
+    )
+    pfz_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pfz_category: Mapped[str] = mapped_column(String(64), nullable=False)
+    risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    risk_category: Mapped[str] = mapped_column(String(64), nullable=False)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
+    confidence_label: Mapped[str] = mapped_column(String(64), nullable=False)
+    explanation: Mapped[str] = mapped_column(String(2000), nullable=False)
+    analytics_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    observation: Mapped[EnvironmentalObservation] = relationship(back_populates="analytics_results")
