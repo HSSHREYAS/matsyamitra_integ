@@ -1,20 +1,22 @@
 # MatsyaMitra Data Extraction Framework
 
-Last updated: 2026-07-05
+Last updated: 2026-07-31
 
 ## Purpose
 
 This document explains the complete Earth observation data framework currently implemented in MatsyaMitra.
 
-The framework is not a fish prediction model. It is a reusable environmental data pipeline that extracts, aligns, validates, standardizes, and cleans coastal ocean parameters so they can later be stored in PostgreSQL/PostGIS and used for PFZ/risk analytics.
+The framework is not a fish prediction model. It is a reusable environmental data pipeline that extracts, aligns, validates, standardizes, cleans, stores, and scores coastal ocean parameters so they can later support PFZ/risk map layers and backend APIs.
 
 ## Completed Phases
 
 - Phase 1: reusable Earth Engine extraction framework
 - Phase 2: multi-dataset environmental integration
 - Phase 3: data standardization and quality assurance
+- Phase 4: SQLAlchemy persistence layer for validated observations
+- Phase 5: deterministic PFZ, risk, confidence, and explanation scoring
 
-No PostgreSQL, REST API, PFZ scoring, risk scoring, heatmap generation, machine learning, or React Native UI integration is implemented in this framework yet.
+Live PostgreSQL deployment, REST API integration, heatmap generation, machine learning, scheduling, and React Native UI integration are not implemented in this framework yet.
 
 ## Input Foundation
 
@@ -53,8 +55,29 @@ analytics/
   quality.py
   cleaner.py
   report.py
+  persistence/
+    database.py
+    models.py
+    repository.py
+    session.py
+    ingest.py
+    queries.py
+    exceptions.py
+  scoring/
+    config.py
+    models.py
+    normalization.py
+    pfz.py
+    risk.py
+    confidence.py
+    categories.py
+    explain.py
+    engine.py
+    tests.py
   tests/
     test_quality_pipeline.py
+    test_persistence.py
+    test_scoring_engine.py
   data/
     geometry/
       karnataka_aoi.geojson
@@ -271,14 +294,50 @@ Run tests:
 analytics\.venv\Scripts\python.exe -B -m unittest discover -s analytics\tests -v
 ```
 
+## Phase 4: Persistence Layer
+
+Phase 4 stores validated environmental observations through a clean SQLAlchemy persistence package.
+
+Implemented modules:
+
+- `persistence/database.py`: database engine and table helpers.
+- `persistence/session.py`: transaction-safe session management.
+- `persistence/models.py`: ORM models for observations, extraction runs, and dataset metadata.
+- `persistence/repository.py`: reusable CRUD and query operations.
+- `persistence/ingest.py`: validated DataFrame ingestion and extraction run tracking.
+- `persistence/queries.py`: simple query helpers for future analytics modules.
+- `persistence/exceptions.py`: custom persistence exceptions.
+
+The persistence layer receives validated DataFrames only. It does not call Earth Engine, React Native, or Node.js.
+
+## Phase 5: Deterministic Analytics
+
+Phase 5 adds deterministic scoring after the validated environmental DataFrame is available.
+
+Implemented outputs:
+
+- `PFZScore`
+- `PFZCategory`
+- `RiskScore`
+- `RiskCategory`
+- `ConfidenceScore`
+- `ConfidenceLabel`
+- `Explanation`
+
+The scoring engine is documented separately in:
+
+```text
+docs/DATA_ANALYTICS_MODEL.md
+```
+
 ## Known Limitations
 
 - Wave-height values may be missing for some sampled coastal locations.
 - Chlorophyll data may be unavailable for some requested dates.
 - Currents are deferred until a maintained dataset is finalized.
-- PostgreSQL/PostGIS storage is not implemented yet.
+- Live PostgreSQL/PostGIS deployment is not implemented yet.
 - REST API integration is not implemented yet.
-- PFZ and risk scoring are not implemented yet.
+- Scored outputs are not persisted or served through REST APIs yet.
 - Heatmap generation is not implemented yet.
 
 ## Current Output Contract
@@ -296,3 +355,22 @@ Chlorophyll
 ```
 
 This DataFrame is the planned handoff point to PostgreSQL/PostGIS and later analytics modules.
+
+The current scored output contract is:
+
+```text
+Latitude
+Longitude
+Date
+SST
+WindSpeed
+WaveHeight
+Chlorophyll
+PFZScore
+PFZCategory
+RiskScore
+RiskCategory
+ConfidenceScore
+ConfidenceLabel
+Explanation
+```

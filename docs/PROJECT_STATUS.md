@@ -1,6 +1,6 @@
 # MatsyaMitra Project Status
 
-Last updated: 2026-07-05
+Last updated: 2026-07-31
 
 ## Overall Project Overview
 
@@ -10,7 +10,7 @@ The project direction is deliberately rule-based and analytics-driven. Heavy ML 
 
 ## Current Software Architecture
 
-The current codebase is a React Native Android application with mock data powering the UI, plus an existing Node.js backend per project context. The Earth Engine analytics framework now supports extraction, multi-dataset integration, standardization, quality validation, cleaning, and reporting, but it is not yet integrated with the backend, database, or mobile API flow.
+The current codebase is a React Native Android application with mock data powering the UI, plus an existing Node.js backend per project context. The Earth Engine analytics framework now supports extraction, multi-dataset integration, standardization, quality validation, cleaning, reporting, persistence abstractions, and deterministic environmental scoring. These analytics outputs are not yet integrated with the backend or mobile API flow.
 
 Current runtime layers:
 
@@ -22,6 +22,8 @@ Current runtime layers:
 - Python analytics package under `analytics`
 - Earth Engine extraction framework
 - Pandas-based data standardization and quality assurance layer
+- SQLAlchemy persistence layer for validated environmental observations
+- Deterministic PFZ, risk, confidence, and explanation scoring engine
 
 ## Frontend Architecture
 
@@ -60,7 +62,7 @@ Planned backend responsibilities:
 
 - Ingest official and external marine data sources
 - Expose APIs for weather, fishing zones, risk zones, alerts, and advisories
-- Run rule-based scoring for PFZ and risk outputs
+- Receive or trigger rule-based PFZ/risk scoring outputs
 - Serve processed map-ready layers to the mobile app
 - Store spatial outputs in PostgreSQL/PostGIS
 
@@ -73,7 +75,7 @@ Current and planned backend stack:
 
 ## Data Pipeline Architecture
 
-Current state: Google Earth Engine foundation is configured and verified. The analytics framework can extract selected environmental datasets, merge them into one unified environmental DataFrame, and transform that output into a standardized quality-checked DataFrame suitable for future long-term storage.
+Current state: Google Earth Engine foundation is configured and verified. The analytics framework can extract selected environmental datasets, merge them into one unified environmental DataFrame, transform that output into a standardized quality-checked DataFrame, persist validated observations through a repository layer, and generate deterministic PFZ/risk/confidence scores for each validated observation.
 
 Current and planned pipeline:
 
@@ -88,34 +90,39 @@ Current and planned pipeline:
 9. Validate missing values, invalid values, outliers, duplicates, and identity fields
 10. Clean observations using configurable policies
 11. Generate machine-readable and human-readable QA reports
-12. Later: ingest official PFZ advisories, marine weather, and hazard alerts
-13. Later: normalize inputs into a backend data model
-14. Later: apply rule-based/fuzzy scoring
-15. Later: generate map layers for fishing zones and risk zones
-16. Later: store spatial outputs in PostGIS
-17. Later: serve mobile-ready API responses
+12. Store validated observations through the persistence layer when a configured database is available
+13. Apply deterministic PFZ suitability, marine risk, confidence, and explanation scoring
+14. Later: ingest official PFZ advisories, marine weather, and hazard alerts
+15. Later: normalize scored outputs into a backend data model
+16. Later: generate map layers for fishing zones and risk zones
+17. Later: store spatial outputs in PostGIS
+18. Later: serve mobile-ready API responses
 
 ## Database Architecture
 
-Database is not yet implemented.
+Database persistence architecture has been implemented in Python using SQLAlchemy ORM. Live PostgreSQL provisioning and validation are still pending.
 
-Planned database:
+Current and planned database:
 
 - PostgreSQL
 - PostGIS extension
 
-Planned entities:
+Implemented analytics tables:
 
-- users
-- vessels
-- ports
-- weather_observations
-- satellite_observations
-- fishing_zones
-- risk_zones
-- advisories
-- alerts
-- map_layer_snapshots
+- `environmental_observations`
+- `extraction_runs`
+- `dataset_metadata`
+
+Planned application/backend entities:
+
+- `users`
+- `vessels`
+- `ports`
+- `fishing_zones`
+- `risk_zones`
+- `advisories`
+- `alerts`
+- `map_layer_snapshots`
 
 ## Technologies Used
 
@@ -139,6 +146,7 @@ Implemented:
 - SQLAlchemy
 - Alembic
 - psycopg2-binary
+- Python deterministic scoring modules
 
 Planned:
 
@@ -246,8 +254,11 @@ Recent validation completed:
 - Phase 2 compact Earth Engine validation succeeded with SST, wind speed, wave height, and chlorophyll.
 - Phase 3 QA pipeline unit tests passed: 8 tests.
 - A compact real Earth Engine output was passed through the QA layer successfully.
-- Phase 4 persistence unit tests passed: 14 total analytics tests, including 6 persistence tests.
+- Phase 4 persistence unit tests passed, including 6 persistence tests.
+- Phase 5 deterministic scoring tests passed.
+- Current local analytics suite passed: 27 tests.
 - Persistence sanity checks covered table creation, insertion, duplicate handling, query operations, delete helper, schema validation, and rollback behavior.
+- Scoring sanity checks covered ideal, moderate, poor, dangerous, missing-parameter, invalid-value, freshness, category, DataFrame, and weight-redistribution behavior.
 
 Known validation behavior:
 
@@ -279,6 +290,37 @@ The persistence layer stores only validated environmental observations with `Lat
 
 Retention configuration exists through `MATSYAMITRA_DATA_RETENTION_DAYS` with a default of `7`, but automatic deletion and scheduled cleanup are intentionally not implemented in this phase.
 
+## Deterministic Environmental Analytics Engine
+
+Phase 5 added a deterministic scoring engine under `analytics/scoring`. This layer consumes validated environmental records only and is independent from Earth Engine, PostgreSQL, Node.js, REST APIs, React Native, heatmaps, scheduling, and machine learning.
+
+Implemented modules:
+
+- `analytics/scoring/config.py`: centralized scoring thresholds, weights, categories, valid ranges, and freshness factors.
+- `analytics/scoring/models.py`: scoring input/output schemas and internal scoring result structures.
+- `analytics/scoring/normalization.py`: generic suitability, risk normalization, value validation, clamping, and weight redistribution helpers.
+- `analytics/scoring/pfz.py`: deterministic Potential Fishing Zone suitability score calculation.
+- `analytics/scoring/risk.py`: deterministic marine risk score calculation.
+- `analytics/scoring/confidence.py`: data availability and freshness-based confidence scoring.
+- `analytics/scoring/categories.py`: score-to-label category mapping.
+- `analytics/scoring/explain.py`: short human-readable explanation generation.
+- `analytics/scoring/engine.py`: public `score_record()` and `score_dataframe()` interface.
+- `analytics/scoring/tests.py`: deterministic scoring unit tests.
+
+Scoring outputs:
+
+- `PFZScore`
+- `PFZCategory`
+- `RiskScore`
+- `RiskCategory`
+- `ConfidenceScore`
+- `ConfidenceLabel`
+- `Explanation`
+
+The PFZ score uses SST, chlorophyll, and wind suitability. The risk score uses wave height and wind risk. Missing or invalid parameters do not crash the engine; available parameter weights are redistributed within the relevant score. Confidence is reduced based on missing/invalid inputs and observation freshness.
+
+Phase 5 validation completed successfully with 27 analytics tests passing, including persistence, QA, and scoring tests.
+
 ## Google Earth Engine Datasets Selected
 
 Finalized dataset stack:
@@ -291,7 +333,7 @@ Finalized dataset stack:
 - Wave Height: ERA5 Hourly using Significant Wave Height
 - Currents: pending evaluation because currently available HYCOM datasets are historical.
 
-The current milestone is to prepare the standardized, quality-checked environmental output for future PostgreSQL/PostGIS storage.
+The current milestone is to prepare scored environmental outputs for future database/backend integration and geospatial visualization.
 
 ## Folder Structure
 
@@ -326,6 +368,7 @@ Current important folders:
 - `analytics/tests`: Python unit tests for the analytics framework
 - `analytics/persistence`: SQLAlchemy persistence layer for validated environmental observations
 - `analytics/persistence/migrations`: Alembic-ready migration structure
+- `analytics/scoring`: deterministic PFZ, risk, confidence, and explanation scoring engine
 - `docs`: project documentation
 
 ## Important Implementation Decisions
@@ -352,6 +395,10 @@ Current important folders:
 - The persistence layer receives only validated DataFrames and must remain independent from Earth Engine and extraction code.
 - Future analytics modules should use repository/query helpers instead of writing SQL directly.
 - Automatic retention cleanup is deferred to a future infrastructure/scheduling phase.
+- PFZ, risk, confidence, and explanation scoring are deterministic and config-driven.
+- Scoring modules consume validated observations only and must not call Earth Engine, SQLAlchemy, backend APIs, or UI code.
+- Missing PFZ/risk parameters trigger weight redistribution instead of hard failure.
+- Confidence combines parameter availability with data freshness.
 
 ## Completed Modules
 
@@ -405,6 +452,12 @@ Current important folders:
 - Duplicate observation handling implemented
 - Alembic-ready migration structure added
 - Persistence unit tests added
+- Deterministic PFZ scoring implemented
+- Deterministic marine risk scoring implemented
+- Confidence scoring implemented
+- Human-readable scoring explanations implemented
+- Scoring DataFrame interface implemented
+- Scoring unit tests added
 - Local documentation system initialized
 
 ## Pending Modules
@@ -418,9 +471,9 @@ Current important folders:
 - Retention cleanup utility
 - Scheduled ingestion workflow
 - INCOIS PFZ ingestion
-- Rule-based PFZ score calculation
-- Rule-based risk score calculation
 - Heatmap generation
+- Scored output persistence/integration
+- Backend API integration for scored outputs
 - PostgreSQL/PostGIS live deployment
 - Notifications
 - Deployment
@@ -429,6 +482,7 @@ Current important folders:
 ## Known Issues
 
 - Earth Engine extraction outputs are not integrated with the Node.js backend yet.
+- Deterministic scoring outputs are not persisted or exposed through REST APIs yet.
 - All domain data in the app is mock data.
 - Map overlays are static mock geometry.
 - Heatmap layer is not implemented.
@@ -449,6 +503,7 @@ Current important folders:
 - Government/advisory scraping, if needed, will happen in backend jobs.
 - The canonical AOI for extraction is `analytics/data/geometry/karnataka_aoi.geojson`.
 - The current analytics output can be ingested through the persistence layer, but live PostgreSQL deployment is still pending.
+- The current scoring output can be generated from validated records, but the app still displays mock PFZ/risk overlays until backend/API integration is implemented.
 
 ## Environment Variables
 
@@ -506,3 +561,4 @@ Planned:
 - 2026-07: Multi-dataset environmental pipeline implemented for SST, wind speed, wave height, and chlorophyll with shared spatial sampling and temporal alignment.
 - 2026-07: Environmental data standardization and quality assurance layer implemented with metadata-driven validation, cleaning, reports, schema definitions, and unit tests.
 - 2026-07: SQLAlchemy persistence layer implemented for validated environmental observations with repository/query abstractions, ingestion summaries, extraction run tracking, dataset metadata storage, Alembic-ready structure, duplicate handling, and rollback-tested unit tests.
+- 2026-07: Deterministic environmental analytics engine implemented for PFZ suitability, marine risk, confidence scoring, and human-readable explanations with config-driven thresholds and unit-tested behavior.

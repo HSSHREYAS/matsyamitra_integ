@@ -1,17 +1,17 @@
-# Current Phase: Analytics Input Preparation
+# Current Phase: Scored Output Integration Preparation
 
-Last updated: 2026-07-05
+Last updated: 2026-07-31
 
 ## Objective
 
-Prepare future analytics modules to consume validated environmental observations through the repository layer without accessing SQL directly.
+Prepare the completed deterministic analytics outputs for the next integration milestone without adding REST APIs, heatmaps, scheduling, or React Native changes in this phase.
 
 ## Deliverables
 
-- Define query contracts needed by future PFZ and risk scoring
-- Keep analytics independent from SQLAlchemy models
-- Confirm persistence output remains the canonical input for future analytics
-- Avoid PFZ/risk scoring until the next analytics phase is explicitly started
+- Keep Phase 5 scoring engine complete and isolated from Earth Engine, database, backend, and UI layers.
+- Confirm validated environmental records can be converted into PFZ, risk, confidence, and explanation outputs.
+- Keep scored output contracts documented for future persistence, REST API, and visualization work.
+- Identify the next implementation boundary for backend/database integration.
 
 ## Current Status
 
@@ -38,7 +38,15 @@ Prepare future analytics modules to consume validated environmental observations
 | Query Utilities | DONE |
 | Alembic-Ready Structure | DONE |
 | Persistence Unit Tests | DONE |
-| Live PostgreSQL Deployment | TODO |
+| PFZ Score Generation | DONE |
+| Risk Score Generation | DONE |
+| Confidence Score Generation | DONE |
+| Scoring Explanations | DONE |
+| Scoring Unit Tests | DONE |
+| Scored Output Persistence | TODO |
+| REST API Integration | TODO |
+| Heatmap Generation | TODO |
+| React Native Visualization Integration | TODO |
 
 ## Tasks
 
@@ -70,31 +78,41 @@ Prepare future analytics modules to consume validated environmental observations
 | Implement query helpers | DONE |
 | Implement rollback tests | DONE |
 | Add Alembic-ready migration structure | DONE |
+| Implement config-driven scoring thresholds and categories | DONE |
+| Implement generic normalization utilities | DONE |
+| Implement PFZ suitability scoring | DONE |
+| Implement marine risk scoring | DONE |
+| Implement confidence scoring | DONE |
+| Implement scoring explanations | DONE |
+| Implement `score_record()` public interface | DONE |
+| Implement `score_dataframe()` batch interface | DONE |
+| Add deterministic scoring tests | DONE |
 | Provision live PostgreSQL database | TODO |
-| Validate persistence against live PostgreSQL | TODO |
+| Persist scored outputs | TODO |
+| Expose scored outputs through backend API | TODO |
+| Generate heatmap-ready layers | TODO |
 
 ## Dependencies
 
 - Existing Earth Engine authentication
 - Canonical AOI file at `analytics/data/geometry/karnataka_aoi.geojson`
 - Python packages already installed in `analytics/.venv`
-- Pandas for standardization, validation, cleaning, and reporting
-- SQLAlchemy ORM
-- Alembic
-- PostgreSQL driver `psycopg2-binary`
+- Pandas for DataFrame scoring
+- Existing validated DataFrame contract: `Latitude`, `Longitude`, `Date`, `SST`, `WindSpeed`, `WaveHeight`, `Chlorophyll`
 - Future live PostgreSQL environment
+- Future backend API integration
 
 ## Risks
 
-- Wave-height observations may be missing for some sampled coastal points.
-- Chlorophyll availability depends on the requested analysis date.
-- Currents remain deferred until a maintained dataset is finalized.
-- Database schema must preserve scientific units and quality metadata.
-- Persistence tests currently use SQLite for isolated local validation; live PostgreSQL validation is still pending.
+- Scoring thresholds are deterministic academic assumptions and should be calibrated later against advisories, domain feedback, and guide review.
+- Missing wave or chlorophyll values can reduce confidence or change score weighting.
+- The scoring engine is tested locally but is not yet connected to live PostgreSQL or backend APIs.
+- Heatmap visualization will require a separate aggregation/interpolation design and is intentionally not implemented yet.
 
 ## Notes
 
-- The current canonical cleaned output columns are `Latitude`, `Longitude`, `Date`, `SST`, `WindSpeed`, `WaveHeight`, and `Chlorophyll`.
-- The persistence layer receives only validated DataFrames and is independent from Earth Engine, extraction, Node.js, and React Native.
-- No REST API, PFZ scoring, risk scoring, heatmaps, scheduling, retention cleanup, or React Native UI work has been implemented in Phase 4.
-- Documentation for the complete framework is available in `docs/DATA_EXTRACTION_FRAMEWORK.md`.
+- The current canonical scored output columns are `Latitude`, `Longitude`, `Date`, `SST`, `WindSpeed`, `WaveHeight`, `Chlorophyll`, `PFZScore`, `PFZCategory`, `RiskScore`, `RiskCategory`, `ConfidenceScore`, `ConfidenceLabel`, and `Explanation`.
+- The scoring engine receives validated observations only and does not call Earth Engine, SQLAlchemy, Node.js, or React Native.
+- Current tests pass with `analytics\.venv\Scripts\python.exe -B -m unittest discover -s analytics\tests -v`.
+- Documentation for the extraction framework is available in `docs/DATA_EXTRACTION_FRAMEWORK.md`.
+- Documentation for the deterministic analytics model is available in `docs/DATA_ANALYTICS_MODEL.md`.

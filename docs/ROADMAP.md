@@ -1,6 +1,6 @@
 # MatsyaMitra Roadmap
 
-Last updated: 2026-07-05
+Last updated: 2026-07-31
 
 ## Completed
 
@@ -21,19 +21,25 @@ Last updated: 2026-07-05
 - SQLAlchemy Persistence Layer
 - Validated DataFrame Ingestion
 - Repository Query Layer
+- Deterministic Data Analytics Engine
+- PFZ Score Generation
+- Risk Score Generation
+- Confidence Score Generation
+- Scoring Explanation Generation
 
 ## Current
 
-- Live PostgreSQL Provisioning
+- Scored Output Integration Preparation
 
 ## Future
 
+- Live PostgreSQL Provisioning
 - PostgreSQL + PostGIS
+- Scored Output Persistence
 - Automated Data Ingestion
-- Data Analytics using Pandas and NumPy
-- PFZ Score Generation
-- Risk Score Generation
+- Data Analytics Calibration using Pandas and NumPy
 - Heatmap Generation
 - REST API Integration
 - React Native Visualization
+- Notifications
 - Deployment
