@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from analytics.config import DEFAULT_PERSISTENCE_TABLE_NAMES
@@ -36,6 +36,39 @@ class ExtractionRun(Base):
     )
 
 
+class SamplingLocation(Base):
+    """Canonical 25 Karnataka coastal sampling locations (KARN_001 … KARN_025)."""
+
+    __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.sampling_locations
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    location_id: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+    )
+
+    environmental_observations: Mapped[list["EnvironmentalObservation"]] = relationship(
+        back_populates="sampling_location",
+    )
+    marine_observations: Mapped[list["MarineObservation"]] = relationship(
+        back_populates="sampling_location",
+    )
+    pfz_results: Mapped[list["PfzResult"]] = relationship(
+        back_populates="sampling_location",
+        cascade="all, delete-orphan",
+    )
+    risk_results: Mapped[list["RiskResult"]] = relationship(
+        back_populates="sampling_location",
+        cascade="all, delete-orphan",
+    )
+
+
 class EnvironmentalObservation(Base):
     __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.environmental_observations
     __table_args__ = (
@@ -48,6 +81,13 @@ class EnvironmentalObservation(Base):
     )
 
     id: Mapped[int] = mapped_column("observation_id", Integer, primary_key=True, autoincrement=True)
+    # Nullable FK — existing GEE observations (random sampling) will have NULL here.
+    # Module 4 will populate this when GEE is migrated to canonical locations.
+    sampling_location_id: Mapped[int | None] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.sampling_locations}.id"),
+        nullable=True,
+        index=True,
+    )
     latitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     longitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     observation_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
@@ -67,9 +107,15 @@ class EnvironmentalObservation(Base):
     )
 
     run: Mapped[ExtractionRun] = relationship(back_populates="observations")
+    sampling_location: Mapped["SamplingLocation | None"] = relationship(
+        back_populates="environmental_observations",
+    )
     analytics_results: Mapped[list["AnalyticsResult"]] = relationship(
         back_populates="observation",
         cascade="all, delete-orphan",
+    )
+    pfz_results: Mapped[list["PfzResult"]] = relationship(
+        back_populates="environmental_observation",
     )
 
 
@@ -125,6 +171,12 @@ class MarineObservation(Base):
     )
 
     marine_observation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # Nullable FK — backfilled from location_id by the Module 1 migration.
+    sampling_location_id: Mapped[int | None] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.sampling_locations}.id"),
+        nullable=True,
+        index=True,
+    )
     location_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
@@ -136,3 +188,90 @@ class MarineObservation(Base):
     source_longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     source_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    sampling_location: Mapped["SamplingLocation | None"] = relationship(
+        back_populates="marine_observations",
+    )
+    risk_results: Mapped[list["RiskResult"]] = relationship(
+        back_populates="marine_observation",
+    )
+
+
+class PfzResult(Base):
+    """Potential Fishing Zone result derived from GEE SST and Chlorophyll."""
+
+    __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.pfz_results
+    __table_args__ = (
+        UniqueConstraint(
+            "sampling_location_id",
+            "observation_date",
+            "analytics_version",
+            name="uq_pfz_result_location_date_version",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    sampling_location_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.sampling_locations}.id"),
+        nullable=False,
+        index=True,
+    )
+    observation_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    environmental_observation_id: Mapped[int | None] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.environmental_observations}.observation_id"),
+        nullable=True,
+        index=True,
+    )
+    source: Mapped[str] = mapped_column(String(64), nullable=False, default="gee")
+    sst: Mapped[float | None] = mapped_column(Float, nullable=True)
+    chlorophyll: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pfz_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pfz_category: Mapped[str] = mapped_column(String(64), nullable=False)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
+    analytics_version: Mapped[str] = mapped_column(String(64), nullable=False, default="deterministic-v1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    sampling_location: Mapped[SamplingLocation] = relationship(back_populates="pfz_results")
+    environmental_observation: Mapped["EnvironmentalObservation | None"] = relationship(
+        back_populates="pfz_results",
+    )
+
+
+class RiskResult(Base):
+    """Operational Risk result derived from Open-Meteo wind speed and wave height."""
+
+    __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.risk_results
+    __table_args__ = (
+        UniqueConstraint(
+            "sampling_location_id",
+            "observation_timestamp",
+            "analytics_version",
+            name="uq_risk_result_location_timestamp_version",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    sampling_location_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.sampling_locations}.id"),
+        nullable=False,
+        index=True,
+    )
+    observation_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    marine_observation_id: Mapped[int | None] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.marine_observations}.marine_observation_id"),
+        nullable=True,
+        index=True,
+    )
+    source: Mapped[str] = mapped_column(String(64), nullable=False, default="open-meteo")
+    wind_speed: Mapped[float | None] = mapped_column(Float, nullable=True)
+    wave_height: Mapped[float | None] = mapped_column(Float, nullable=True)
+    risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    risk_category: Mapped[str] = mapped_column(String(64), nullable=False)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
+    analytics_version: Mapped[str] = mapped_column(String(64), nullable=False, default="deterministic-v1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    sampling_location: Mapped[SamplingLocation] = relationship(back_populates="risk_results")
+    marine_observation: Mapped["MarineObservation | None"] = relationship(
+        back_populates="risk_results",
+    )

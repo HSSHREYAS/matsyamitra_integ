@@ -125,6 +125,9 @@ class PersistenceTableNames:
     dataset_metadata: str = "dataset_metadata"
     analytics_results: str = "analytics_results"
     marine_observations: str = "marine_observations"
+    sampling_locations: str = "sampling_locations"
+    pfz_results: str = "pfz_results"
+    risk_results: str = "risk_results"
 
 
 @dataclass(frozen=True)
@@ -250,6 +253,9 @@ DEFAULT_PERSISTENCE_TABLE_NAMES = PersistenceTableNames(
     dataset_metadata=os.getenv("MATSYAMITRA_METADATA_TABLE", "dataset_metadata"),
     analytics_results=os.getenv("MATSYAMITRA_ANALYTICS_RESULTS_TABLE", "analytics_results"),
     marine_observations=os.getenv("MATSYAMITRA_MARINE_OBSERVATIONS_TABLE", "marine_observations"),
+    sampling_locations=os.getenv("MATSYAMITRA_SAMPLING_LOCATIONS_TABLE", "sampling_locations"),
+    pfz_results=os.getenv("MATSYAMITRA_PFZ_RESULTS_TABLE", "pfz_results"),
+    risk_results=os.getenv("MATSYAMITRA_RISK_RESULTS_TABLE", "risk_results"),
 )
 DEFAULT_PIPELINE_CONFIG = PipelineConfig(
     duplicate_policy=os.getenv("MATSYAMITRA_DUPLICATE_POLICY", "skip").lower(),

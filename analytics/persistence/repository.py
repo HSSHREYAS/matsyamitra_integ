@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Any
+
 import pandas as pd
 from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -9,8 +13,9 @@ from sqlalchemy.orm import Session
 
 from analytics.metadata import list_parameter_metadata
 from analytics.persistence.exceptions import DuplicateObservationError, InsertionError
-from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun
+from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun, PfzResult
 from analytics.schemas import EnvironmentalRecord
+from analytics.scoring.models import PfzScoredResult
 
 
 @dataclass(frozen=True)
@@ -333,3 +338,69 @@ def _optional_float(value: Any) -> float | None:
     if value is None or pd.isna(value):
         return None
     return float(value)
+
+
+class PfzRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def insert_pfz_result(self, result: PfzScoredResult) -> int:
+        """Insert a single PfzScoredResult. Handles duplicates by ignoring them."""
+        existing = self.session.scalar(
+            select(PfzResult).where(
+                PfzResult.sampling_location_id == result.sampling_location_id,
+                PfzResult.observation_date == result.observation_date,
+                PfzResult.analytics_version == result.analytics_version,
+            )
+        )
+        if existing is not None:
+            return 0
+
+        pfz_row = PfzResult(
+            sampling_location_id=result.sampling_location_id,
+            observation_date=result.observation_date,
+            environmental_observation_id=result.environmental_observation_id,
+            source=result.source,
+            sst=result.sst,
+            chlorophyll=result.chlorophyll,
+            pfz_score=result.pfz_score,
+            pfz_category=result.pfz_category,
+            confidence_score=result.confidence_score,
+            analytics_version=result.analytics_version,
+        )
+        self.session.add(pfz_row)
+        self.session.flush()
+        return 1
+
+    def get_latest_pfz_results(self) -> list[PfzResult]:
+        """Return exactly one latest PFZ result for each active canonical sampling location."""
+        # Use ROW_NUMBER window function to remain compatible with SQLite and Postgres
+        subquery = (
+            select(
+                PfzResult.id,
+                func.row_number()
+                .over(
+                    partition_by=PfzResult.sampling_location_id,
+                    order_by=(PfzResult.observation_date.desc(), PfzResult.id.desc()),
+                )
+                .label("rn"),
+            )
+            .subquery()
+        )
+
+        statement = (
+            select(PfzResult)
+            .join(subquery, PfzResult.id == subquery.c.id)
+            .where(subquery.c.rn == 1)
+        )
+        return list(self.session.scalars(statement).all())
+
+    def get_latest_pfz_result_for_location(self, sampling_location_id: int) -> PfzResult | None:
+        """Return the single latest PFZ result for a specific canonical sampling location."""
+        statement = (
+            select(PfzResult)
+            .where(PfzResult.sampling_location_id == sampling_location_id)
+            .order_by(PfzResult.observation_date.desc(), PfzResult.id.desc())
+            .limit(1)
+        )
+        return self.session.scalar(statement)

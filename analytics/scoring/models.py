@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 
@@ -64,3 +64,27 @@ class ScoredObservation:
             "ConfidenceLabel": self.confidence_label,
             "Explanation": self.explanation,
         }
+
+
+@dataclass(frozen=True)
+class PfzScoringInput:
+    sampling_location_id: int
+    observation_date: date
+    sst: float | None
+    chlorophyll: float | None
+    environmental_observation_id: int | None = None
+    data_age_hours: float = 0.0
+
+
+@dataclass(frozen=True)
+class PfzScoredResult:
+    sampling_location_id: int
+    observation_date: date
+    sst: float | None
+    chlorophyll: float | None
+    pfz_score: float | None
+    pfz_category: str
+    confidence_score: float
+    analytics_version: str
+    environmental_observation_id: int | None = None
+    source: str = "gee"

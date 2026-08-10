@@ -49,6 +49,7 @@ class ScoringConfig:
     wind_risk: RiskRamp
     wave_risk: RiskRamp
     pfz_weights: dict[str, float]
+    pfz_confidence_weights: dict[str, float]
     risk_weights: dict[str, float]
     confidence_weights: dict[str, float]
     pfz_categories: tuple[ScoreCategory, ...]
@@ -95,9 +96,12 @@ DEFAULT_SCORING_CONFIG = ScoringConfig(
         extreme_at=2.5,
     ),
     pfz_weights={
-        "sst": 0.40,
-        "chlorophyll": 0.45,
-        "wind": 0.15,
+        "sst": 0.4706,
+        "chlorophyll": 0.5294,
+    },
+    pfz_confidence_weights={
+        "sst": 0.4615,
+        "chlorophyll": 0.5385,
     },
     risk_weights={
         "wave": 0.60,
