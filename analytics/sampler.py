@@ -10,6 +10,7 @@ from .extractor import ExtractedImage
 
 FRAME_COLUMNS = [
     "SampleID",
+    "location_id",
     "Latitude",
     "Longitude",
     "Date",
@@ -17,48 +18,39 @@ FRAME_COLUMNS = [
     "Value",
     "Dataset",
     "OutputColumn",
+    "SourceTimestamp",
 ]
-POINT_COLUMNS = ["SampleID", "Latitude", "Longitude"]
+POINT_COLUMNS = ["SampleID", "location_id", "Latitude", "Longitude"]
 
 
 def create_sampling_points(aoi: ee.Geometry, sampling: SamplingConfig) -> ee.FeatureCollection:
-    if SAMPLING_POINTS_PATH.exists():
-        features = []
-        data = json.loads(SAMPLING_POINTS_PATH.read_text(encoding="utf-8"))
-        for index, feature in enumerate(data.get("features", [])):
-            properties = feature.get("properties") or {}
-            coordinates = (feature.get("geometry") or {}).get("coordinates")
-            if coordinates is None:
-                continue
+    if not SAMPLING_POINTS_PATH.exists():
+        raise RuntimeError(f"Canonical sampling locations not found at {SAMPLING_POINTS_PATH}")
 
-            longitude, latitude = coordinates
-            sample_id = str(index)
-            features.append(
-                ee.Feature(
-                    ee.Geometry.Point([longitude, latitude]),
-                    {
-                        "SampleID": sample_id,
-                        "location_id": properties.get("location_id", f"KARN_{index + 1:03d}"),
-                    },
-                )
+    features = []
+    data = json.loads(SAMPLING_POINTS_PATH.read_text(encoding="utf-8"))
+    for index, feature in enumerate(data.get("features", [])):
+        properties = feature.get("properties") or {}
+        coordinates = (feature.get("geometry") or {}).get("coordinates")
+        if coordinates is None:
+            continue
+
+        longitude, latitude = coordinates
+        sample_id = str(index)
+        features.append(
+            ee.Feature(
+                ee.Geometry.Point([longitude, latitude]),
+                {
+                    "SampleID": sample_id,
+                    "location_id": properties.get("location_id", f"KARN_{index + 1:03d}"),
+                },
             )
+        )
 
-        if features:
-            return ee.FeatureCollection(features[: sampling.sample_limit])
+    if not features:
+        raise RuntimeError("No valid features found in canonical geojson.")
 
-    points = ee.FeatureCollection.randomPoints(
-        region=aoi,
-        points=sampling.sample_limit,
-        seed=sampling.seed,
-        maxError=sampling.scale_meters,
-    )
-    point_list = points.toList(sampling.sample_limit)
-
-    def with_sample_id(index: ee.Number) -> ee.Feature:
-        feature = ee.Feature(point_list.get(index))
-        return feature.set("SampleID", ee.Number(index).format("%d"))
-
-    return ee.FeatureCollection(ee.List.sequence(0, sampling.sample_limit - 1).map(with_sample_id))
+    return ee.FeatureCollection(features[: sampling.sample_limit])
 
 
 def sampling_points_to_dataframe(
@@ -77,6 +69,7 @@ def sampling_points_to_dataframe(
         rows.append(
             {
                 "SampleID": str((feature.get("properties") or {}).get("SampleID")),
+                "location_id": (feature.get("properties") or {}).get("location_id"),
                 "Latitude": round(latitude, sampling.coordinate_precision),
                 "Longitude": round(longitude, sampling.coordinate_precision),
             }
@@ -89,6 +82,7 @@ def _feature_to_row(
     feature: dict[str, Any],
     extracted: ExtractedImage,
     sample_date: str,
+    source_timestamp: int | None,
     sampling: SamplingConfig,
 ) -> dict[str, Any] | None:
     geometry = feature.get("geometry") or {}
@@ -103,6 +97,7 @@ def _feature_to_row(
 
     return {
         "SampleID": str(properties.get("SampleID")),
+        "location_id": properties.get("location_id"),
         "Latitude": round(latitude, sampling.coordinate_precision),
         "Longitude": round(longitude, sampling.coordinate_precision),
         "Date": sample_date,
@@ -110,6 +105,7 @@ def _feature_to_row(
         "Value": value,
         "Dataset": extracted.dataset.dataset_id,
         "OutputColumn": extracted.dataset.output_column,
+        "SourceTimestamp": source_timestamp,
     }
 
 
@@ -135,11 +131,12 @@ def sample_image_at_points(
     )
 
     sample_date = extracted.image.get("sample_date").getInfo()
+    source_timestamp = extracted.image.get("SourceTimestamp").getInfo()
     features = sample.getInfo().get("features", [])
     rows = [
         row
         for feature in features
-        if (row := _feature_to_row(feature, extracted, sample_date, sampling)) is not None
+        if (row := _feature_to_row(feature, extracted, sample_date, source_timestamp, sampling)) is not None
     ]
 
     return pd.DataFrame(rows, columns=FRAME_COLUMNS)

@@ -32,16 +32,21 @@ class DateRange:
 
 @dataclass(frozen=True)
 class AnalysisDateConfig:
-    analysis_date: str
-    window_days: int = 1
+    analysis_date: str | None = None
+    window_days: int = 14
 
     def __post_init__(self) -> None:
         if self.window_days <= 0:
             raise ValueError("AnalysisDateConfig.window_days must be greater than zero.")
 
     def to_date_range(self) -> DateRange:
-        start_date = date.fromisoformat(self.analysis_date)
-        end_date = start_date + timedelta(days=self.window_days)
+        if self.analysis_date:
+            start_date = date.fromisoformat(self.analysis_date)
+            end_date = start_date + timedelta(days=self.window_days)
+        else:
+            end_date = date.today()
+            start_date = end_date - timedelta(days=self.window_days)
+            
         return DateRange(start=start_date.isoformat(), end=end_date.isoformat())
 
 
@@ -168,8 +173,8 @@ class RetentionConfig:
 
 
 DEFAULT_ANALYSIS_DATE = AnalysisDateConfig(
-    analysis_date=os.getenv("MATSYAMITRA_ANALYSIS_DATE", "2025-06-01"),
-    window_days=int(os.getenv("MATSYAMITRA_ANALYSIS_WINDOW_DAYS", "1")),
+    analysis_date=os.getenv("MATSYAMITRA_ANALYSIS_DATE", None),
+    window_days=int(os.getenv("MATSYAMITRA_ANALYSIS_WINDOW_DAYS", "14")),
 )
 
 DEFAULT_DATE_RANGE = DateRange(

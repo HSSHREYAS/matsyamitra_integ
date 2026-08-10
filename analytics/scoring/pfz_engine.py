@@ -26,20 +26,27 @@ def calculate_pfz_confidence(
         is not None,
     }
     
-    base_confidence = sum(
-        config.pfz_confidence_weights[key]
-        for key, available in availability.items()
-        if available
-    )
+    base_confidence = 0.0
+    confidence_sum = 0.0
     
-    freshness = _freshness_factor(record.data_age_hours, config)
-    score = round(base_confidence * freshness * 100.0, 1)
+    if availability["sst"]:
+        base_confidence += config.pfz_confidence_weights["sst"]
+        sst_age = record.sst_data_age_hours if record.sst_data_age_hours is not None else 0.0
+        confidence_sum += config.pfz_confidence_weights["sst"] * _freshness_factor(sst_age, config)
+        
+    if availability["chlorophyll"]:
+        base_confidence += config.pfz_confidence_weights["chlorophyll"]
+        chl_age = record.chlorophyll_data_age_hours if record.chlorophyll_data_age_hours is not None else 0.0
+        confidence_sum += config.pfz_confidence_weights["chlorophyll"] * _freshness_factor(chl_age, config)
+
+    effective_freshness = confidence_sum / base_confidence if base_confidence > 0 else 0.0
+    score = round(confidence_sum * 100.0, 1)
 
     return ConfidenceResult(
         score=score,
         label=confidence_label(score, config),
         availability=availability,
-        freshness_factor=freshness,
+        freshness_factor=effective_freshness,
     )
 
 

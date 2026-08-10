@@ -23,7 +23,8 @@ def base_pfz_input(**overrides) -> PfzScoringInput:
         "observation_date": date(2026, 8, 10),
         "sst": 28.2,  # Ideal
         "chlorophyll": 0.82,  # Ideal
-        "data_age_hours": 4,
+        "sst_data_age_hours": 4.0,
+        "chlorophyll_data_age_hours": 4.0,
     }
     kwargs.update(overrides)
     return PfzScoringInput(**kwargs)
@@ -93,7 +94,7 @@ class PfzScoringTests(unittest.TestCase):
 
     def test_old_observations_reduce_confidence(self) -> None:
         """Data age reduces confidence multiplier."""
-        scored = score_pfz_record(base_pfz_input(data_age_hours=72))
+        scored = score_pfz_record(base_pfz_input(sst_data_age_hours=72, chlorophyll_data_age_hours=72))
         self.assertEqual(scored.confidence_score, 50.0)  # 100% * 0.50 factor
 
     def test_score_boundaries(self) -> None:

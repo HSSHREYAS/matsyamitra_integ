@@ -38,7 +38,7 @@ def prepare_image(
 ) -> ExtractedImage:
     image = ee.Image(
         filter_collection(dataset, aoi, date_range)
-        .sort("system:time_start")
+        .sort("system:time_start", False)
         .first()
     )
 
@@ -52,6 +52,7 @@ def prepare_image(
                 "parameter": dataset.parameter,
                 "output_column": dataset.output_column,
                 "sample_date": ee.Date(image.get("system:time_start")).format("YYYY-MM-dd"),
+                "SourceTimestamp": image.get("system:time_start"),
             }
         )
     )

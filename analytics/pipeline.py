@@ -166,9 +166,13 @@ def merge_environmental_dataframes(
             merged[result.output_column] = pd.NA
             continue
 
-        parameter_frame = result.dataframe[["SampleID", "Value"]].rename(
-            columns={"Value": result.output_column}
-        )
+        columns_to_merge = {"Value": result.output_column}
+        if "SourceTimestamp" in result.dataframe.columns:
+            columns_to_merge["SourceTimestamp"] = f"{result.output_column}_Timestamp"
+            parameter_frame = result.dataframe[["SampleID", "Value", "SourceTimestamp"]].rename(columns=columns_to_merge)
+        else:
+            parameter_frame = result.dataframe[["SampleID", "Value"]].rename(columns=columns_to_merge)
+
         merged = merged.merge(parameter_frame, on="SampleID", how="left")
 
     return merged.drop(columns=["SampleID"])

@@ -73,7 +73,8 @@ class PfzScoringInput:
     sst: float | None
     chlorophyll: float | None
     environmental_observation_id: int | None = None
-    data_age_hours: float = 0.0
+    sst_data_age_hours: float | None = None
+    chlorophyll_data_age_hours: float | None = None
 
 
 @dataclass(frozen=True)

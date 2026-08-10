@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from analytics.metadata import list_parameter_metadata
 from analytics.persistence.exceptions import DuplicateObservationError, InsertionError
-from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun, PfzResult, RiskResult
+from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun, PfzResult, RiskResult, SamplingLocation
 from analytics.schemas import EnvironmentalRecord
 from analytics.scoring.models import PfzScoredResult, RiskScoredResult
 
@@ -115,6 +115,9 @@ class EnvironmentalObservationRepository:
         replaced_count = 0
         observations_for_analytics: list[EnvironmentalObservation] = []
 
+        locations = self.session.query(SamplingLocation).all()
+        location_map = {loc.location_id: loc.id for loc in locations}
+
         try:
             for row in dataframe.itertuples(index=False):
                 observation_date = _to_date(row.Date)
@@ -123,6 +126,11 @@ class EnvironmentalObservationRepository:
                     longitude=float(row.Longitude),
                     observation_date=observation_date,
                 )
+                
+                # Assign canonical ID if we know the location_id
+                canonical_id = None
+                if hasattr(row, "location_id") and row.location_id in location_map:
+                    canonical_id = location_map[row.location_id]
 
                 if existing is not None and duplicate_policy == "skip":
                     skipped_count += 1
@@ -134,6 +142,8 @@ class EnvironmentalObservationRepository:
                     existing.wave_height = _optional_float(row.WaveHeight)
                     existing.chlorophyll = _optional_float(row.Chlorophyll)
                     existing.run_id = run_id
+                    if canonical_id is not None:
+                        existing.sampling_location_id = canonical_id
                     updated_count += 1
                     observations_for_analytics.append(existing)
                     continue
@@ -144,6 +154,7 @@ class EnvironmentalObservationRepository:
                     replaced_count += 1
 
                 observation = EnvironmentalObservation(
+                    sampling_location_id=canonical_id,
                     latitude=float(row.Latitude),
                     longitude=float(row.Longitude),
                     observation_date=observation_date,
