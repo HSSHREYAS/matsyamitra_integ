@@ -11,13 +11,11 @@ import {
   getLatestMarineObservations,
   persistMarineObservations,
 } from './repository';
-import {scoreOperationalRiskFromMarine} from './risk';
 import {loadSamplingPoints} from './samplingPoints';
-import type {DuplicatePolicy, MarineIngestionSummary, RiskResult} from './types';
+import type {DuplicatePolicy, MarineIngestionSummary} from './types';
 
 export type MarineIngestionResult = {
   summary: MarineIngestionSummary;
-  riskResults: RiskResult[];
 };
 
 export async function runMarineIngestion(
@@ -46,7 +44,6 @@ export async function runMarineIngestion(
     );
     await client.query('commit');
 
-    const latestObservations = await getLatestMarineObservations(client, 'open-meteo', points.length);
     return {
       summary: {
         ...summary,
@@ -54,7 +51,6 @@ export async function runMarineIngestion(
         parsedObservations: observations.length,
         warnings: [...warnings, ...summary.warnings],
       },
-      riskResults: latestObservations.map(scoreOperationalRiskFromMarine),
     };
   } catch (error) {
     await client.query('rollback');

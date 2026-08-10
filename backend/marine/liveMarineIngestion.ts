@@ -21,28 +21,6 @@ async function main(): Promise<void> {
       result.summary.warnings.forEach(warning => console.log(`- ${warning}`));
     }
 
-    console.log('\nSample operational risk records');
-    result.riskResults.slice(0, 5).forEach(record => {
-      console.log(
-        JSON.stringify(
-          {
-            location_id: record.locationId,
-            latitude: record.latitude,
-            longitude: record.longitude,
-            source_latitude: record.sourceLatitude,
-            source_longitude: record.sourceLongitude,
-            observation_timestamp: record.observationTimestamp,
-            wind_speed: record.windSpeed,
-            wave_height: record.waveHeight,
-            risk_score: record.riskScore,
-            risk_category: record.riskCategory,
-          },
-          null,
-          2,
-        ),
-      );
-    });
-
     console.log('\nOPEN-METEO MARINE INTEGRATION: PASS');
   } catch (error) {
     console.error('\nOPEN-METEO MARINE INTEGRATION: FAIL');
