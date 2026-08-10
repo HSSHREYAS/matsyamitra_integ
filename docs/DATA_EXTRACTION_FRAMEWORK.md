@@ -1,6 +1,6 @@
 # MatsyaMitra Data Extraction Framework
 
-Last updated: 2026-08-01
+Last updated: 2026-08-10
 
 ## Purpose
 
@@ -36,6 +36,14 @@ analytics/data/geometry/karnataka_aoi.geojson
 ```
 
 All extraction scripts must load this GeoJSON. Coordinates must not be hardcoded in source code.
+
+Canonical sampling points are stored at:
+
+```text
+analytics/data/geometry/sampling_points.geojson
+```
+
+These 25 stable `KARN_001` to `KARN_025` points are reused by GEE extraction, Open-Meteo ingestion, and future map visualization.
 
 ## Implemented Files
 
@@ -83,6 +91,7 @@ analytics/
   data/
     geometry/
       karnataka_aoi.geojson
+      sampling_points.geojson
 ```
 
 ## Phase 1: Generic Extraction

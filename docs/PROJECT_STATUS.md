@@ -1,6 +1,6 @@
 # MatsyaMitra Project Status
 
-Last updated: 2026-08-01
+Last updated: 2026-08-10
 
 ## Overall Project Overview
 
@@ -10,7 +10,7 @@ The project direction is deliberately rule-based and analytics-driven. Heavy ML 
 
 ## Current Software Architecture
 
-The current codebase is a React Native Android application with mock data powering the UI, plus an existing Node.js backend per project context. The Earth Engine analytics framework now supports extraction, multi-dataset integration, standardization, quality validation, cleaning, reporting, persistence abstractions, deterministic environmental scoring, and an end-to-end persistence pipeline. These analytics outputs are not yet integrated with the backend or mobile API flow.
+The current codebase is a React Native Android application with mock data powering the UI, plus a TypeScript backend integration layer for operational marine weather ingestion. The Earth Engine analytics framework now supports extraction, multi-dataset integration, standardization, quality validation, cleaning, reporting, persistence abstractions, deterministic environmental scoring, and an end-to-end persistence pipeline. These analytics outputs are not yet integrated with the mobile API flow.
 
 Current runtime layers:
 
@@ -25,6 +25,7 @@ Current runtime layers:
 - SQLAlchemy persistence layer for validated environmental observations
 - Deterministic PFZ, risk, confidence, and explanation scoring engine
 - End-to-end environmental data persistence pipeline
+- TypeScript Open-Meteo operational marine ingestion
 
 ## Frontend Architecture
 
@@ -57,7 +58,7 @@ Key frontend folders:
 
 ## Backend Architecture
 
-A Node.js backend exists per project context. This phase does not modify backend code.
+A TypeScript backend integration layer now exists under `backend/marine` for Open-Meteo operational marine ingestion.
 
 Planned backend responsibilities:
 
@@ -70,13 +71,14 @@ Planned backend responsibilities:
 Current and planned backend stack:
 
 - Node.js backend
+- TypeScript Open-Meteo integration
 - REST API initially
 - PostgreSQL + PostGIS for geospatial storage
 - Optional Python analytics service for satellite and scoring workflows
 
 ## Data Pipeline Architecture
 
-Current state: Google Earth Engine foundation is configured and verified. The analytics framework can extract selected environmental datasets, merge them into one unified environmental DataFrame, transform that output into a standardized quality-checked DataFrame, persist validated observations through a repository layer, generate deterministic PFZ/risk/confidence scores for each stored observation, and persist those analytics results in a linked table.
+Current state: Google Earth Engine foundation is configured and verified. The analytics framework can extract selected environmental datasets, merge them into one unified environmental DataFrame, transform that output into a standardized quality-checked DataFrame, persist validated observations through a repository layer, generate deterministic PFZ/risk/confidence scores for each stored observation, and persist those analytics results in a linked table. Open-Meteo now provides operational wind and wave inputs for MVP risk scoring through `marine_observations`; GEE-derived wind/wave remain reference values.
 
 Current and planned pipeline:
 
@@ -96,15 +98,18 @@ Current and planned pipeline:
 14. Apply deterministic PFZ suitability, marine risk, confidence, and explanation scoring
 15. Store analytics outputs in `analytics_results`
 16. Return an execution summary
-17. Later: ingest official PFZ advisories, marine weather, and hazard alerts
-18. Later: normalize scored outputs into a backend API model
-19. Later: generate map layers for fishing zones and risk zones
-20. Later: store spatial outputs in PostGIS
-21. Later: serve mobile-ready API responses
+17. Fetch Open-Meteo marine/forecast wind and wave data for canonical sampling points
+18. Store hourly operational wind/wave data in `marine_observations`
+19. Run operational MVP risk analytics from Open-Meteo wind/wave only
+20. Later: ingest official PFZ advisories and hazard alerts
+21. Later: normalize scored outputs into a backend API model
+22. Later: generate map layers for fishing zones and risk zones
+23. Later: store spatial outputs in PostGIS
+24. Later: serve mobile-ready API responses
 
 ## Database Architecture
 
-Database persistence architecture has been implemented in Python using SQLAlchemy ORM. Live PostgreSQL provisioning and validation are still pending.
+Database persistence architecture has been implemented in Python using SQLAlchemy ORM, with TypeScript PostgreSQL ingestion for Open-Meteo marine observations. Live PostgreSQL connection, table creation, Earth Engine pipeline execution, and Open-Meteo marine ingestion have been validated.
 
 Current and planned database:
 
@@ -117,6 +122,7 @@ Implemented analytics tables:
 - `extraction_runs`
 - `dataset_metadata`
 - `analytics_results`
+- `marine_observations`
 
 Planned application/backend entities:
 
@@ -152,6 +158,10 @@ Implemented:
 - Alembic
 - psycopg2-binary
 - Python deterministic scoring modules
+- Node.js TypeScript
+- Open-Meteo Marine API
+- Open-Meteo Forecast API
+- `pg` PostgreSQL client
 
 Planned:
 
@@ -168,6 +178,7 @@ Implemented:
 - NOAA OISST v2.1
 - ERA5 Hourly
 - Copernicus Global Ocean Colour Bio-Geo-Chemical L4
+- Open-Meteo marine/forecast endpoints for operational wind and wave ingestion
 
 Mocked or pending:
 
@@ -263,9 +274,13 @@ Recent validation completed:
 - Phase 5 deterministic scoring tests passed.
 - Phase 6 end-to-end persistence pipeline tests passed.
 - Current local analytics suite passed: 32 tests.
+- Open-Meteo marine integration TypeScript checks passed.
+- Focused Open-Meteo marine Jest suite passed: 8 tests.
+- Live Open-Meteo ingestion into PostgreSQL passed with 25 canonical locations, 25 valid wind values, and 25 valid wave values.
 - Persistence sanity checks covered table creation, insertion, duplicate handling, query operations, delete helper, schema validation, and rollback behavior.
 - Scoring sanity checks covered ideal, moderate, poor, dangerous, missing-parameter, invalid-value, freshness, category, DataFrame, and weight-redistribution behavior.
 - End-to-end pipeline sanity checks covered observation insertion, analytics-result storage, duplicate skip/update behavior, foreign-key-linked results, and transaction rollback when analytics generation fails.
+- Open-Meteo sanity checks covered batched requests, response mapping, canonical coordinate preservation, source grid coordinate traceability, missing/invalid values, duplicate-safe PostgreSQL persistence, retrieval, and operational risk scoring from Open-Meteo wind/wave only.
 
 Known validation behavior:
 
@@ -349,6 +364,44 @@ Implemented database behavior:
 
 The analytics engine still never communicates with Google Earth Engine. It receives only validated environmental observations that have passed through the extraction and QA pipeline.
 
+## Operational Marine Wind/Wave Integration
+
+The operational MVP risk source now uses Open-Meteo wind and wave values stored in `marine_observations`.
+
+Implemented modules:
+
+- `backend/marine/config.ts`: configurable Open-Meteo base URLs, database URL, duplicate policy, and sampling-point path.
+- `backend/marine/samplingPoints.ts`: canonical sampling-point GeoJSON loader.
+- `backend/marine/openMeteoClient.ts`: batched Open-Meteo fetching, JSON parsing, response mapping, validation, and source-grid metadata handling.
+- `backend/marine/repository.ts`: PostgreSQL table creation, duplicate-safe persistence, and retrieval for `marine_observations`.
+- `backend/marine/risk.ts`: operational MVP risk scoring using Open-Meteo wind speed and wave height only.
+- `backend/marine/ingest.ts`: end-to-end marine ingestion operation.
+- `backend/marine/liveMarineIngestion.ts`: live validation command used by `npm run marine:live`.
+- `__tests__/marineOpenMeteo.test.ts`: focused TypeScript/Jest validation.
+
+Canonical sampling points:
+
+- `analytics/data/geometry/sampling_points.geojson`
+- 25 stable WGS84 points with `location_id` values `KARN_001` through `KARN_025`
+- Reused by both GEE extraction and Open-Meteo ingestion
+
+Operational risk decision:
+
+- PFZ continues to use GEE-derived SST and chlorophyll.
+- GEE-derived wind and wave remain stored in `environmental_observations` for reference/validation only.
+- MVP operational risk uses Open-Meteo wind speed and wave height from `marine_observations`.
+- Open-Meteo returned grid coordinates are stored separately as `source_latitude` and `source_longitude`; canonical MatsyaMitra coordinates remain the frontend/map coordinates.
+
+Live validation result on 2026-08-10:
+
+- Requested locations: 25
+- Parsed observations: 25
+- Inserted on first live pass: 25
+- Updated after wind-source correction: 25
+- Valid wind speed values: 25
+- Valid wave height values: 25
+- Observation timestamp: 2026-08-10 23:00 IST
+
 ## Google Earth Engine Datasets Selected
 
 Finalized dataset stack:
@@ -398,6 +451,8 @@ Current important folders:
 - `analytics/persistence/migrations`: Alembic-ready migration structure
 - `analytics/scoring`: deterministic PFZ, risk, confidence, and explanation scoring engine
 - `analytics/end_to_end_pipeline.py`: Phase 6 operational pipeline connecting extraction, QA, persistence, and scoring
+- `analytics/data/geometry/sampling_points.geojson`: canonical 25-point sampling dataset
+- `backend/marine`: TypeScript Open-Meteo operational wind/wave ingestion and risk integration
 - `run_pipeline.py`: one-command pipeline entry point
 - `docs`: project documentation
 
@@ -432,6 +487,9 @@ Current important folders:
 - Environmental observations and analytics results are separated into factual and derived tables.
 - `analytics_results` must reference `environmental_observations`; analytics results cannot exist without a source observation.
 - Phase 6 duplicate policy is configurable through `MATSYAMITRA_DUPLICATE_POLICY`.
+- Open-Meteo marine observation duplicate handling uses `location_id + observation_timestamp + source`.
+- Operational MVP risk uses Open-Meteo wind/wave values, not GEE wind/wave values.
+- Open-Meteo wave height is fetched from the Marine API; `wind_speed_10m` is fetched from the Open-Meteo Forecast API because the current Marine API does not return that variable.
 
 ## Completed Modules
 
@@ -496,6 +554,11 @@ Current important folders:
 - One-command `run_pipeline.py` entry point implemented
 - Configurable duplicate policy implemented for `skip`, `replace`, and `update`
 - Transaction rollback tests added for pipeline-level analytics failures
+- Canonical `sampling_points.geojson` implemented
+- Open-Meteo operational wind/wave ingestion implemented
+- `marine_observations` table implemented
+- Operational risk scoring from Open-Meteo wind/wave implemented
+- Live Open-Meteo PostgreSQL ingestion validated
 - Local documentation system initialized
 
 ## Pending Modules
@@ -503,8 +566,6 @@ Current important folders:
 - Backend integration for analytics outputs
 - Authentication
 - Real weather/marine API integration
-- Live PostgreSQL database provisioning
-- Live PostgreSQL persistence validation
 - PostGIS geometry migration
 - Retention cleanup utility
 - Scheduled ingestion workflow
@@ -520,6 +581,7 @@ Current important folders:
 
 - Earth Engine extraction outputs are not integrated with the Node.js backend yet.
 - Deterministic scoring outputs are persisted by the Phase 6 pipeline but are not exposed through REST APIs yet.
+- Open-Meteo marine observations are persisted but not exposed through REST APIs yet.
 - All domain data in the app is mock data.
 - Map overlays are static mock geometry.
 - Heatmap layer is not implemented.
@@ -561,6 +623,10 @@ Current analytics/persistence properties:
 - `MATSYAMITRA_DATA_RETENTION_DAYS`: retention policy value for future cleanup tooling, default `7`.
 - `MATSYAMITRA_DUPLICATE_POLICY`: Phase 6 duplicate observation policy, supports `skip`, `replace`, or `update`.
 - `MATSYAMITRA_ANALYTICS_VERSION`: analytics version label stored with generated analytics results.
+- `MATSYAMITRA_MARINE_OBSERVATIONS_TABLE`: optional marine observations table name override.
+- `OPEN_METEO_MARINE_BASE_URL`: optional Open-Meteo Marine API base URL override.
+- `OPEN_METEO_FORECAST_BASE_URL`: optional Open-Meteo Forecast API base URL override for `wind_speed_10m`.
+- `MATSYAMITRA_SAMPLING_POINTS_PATH`: optional canonical sampling-point GeoJSON override.
 
 Planned:
 
@@ -578,6 +644,8 @@ Implemented:
 - Google Cloud Project linked to Earth Engine
 - SQLAlchemy ORM
 - Alembic migration tooling
+- Open-Meteo Marine API
+- Open-Meteo Forecast API
 
 Planned:
 
@@ -603,3 +671,4 @@ Planned:
 - 2026-07: SQLAlchemy persistence layer implemented for validated environmental observations with repository/query abstractions, ingestion summaries, extraction run tracking, dataset metadata storage, Alembic-ready structure, duplicate handling, and rollback-tested unit tests.
 - 2026-07: Deterministic environmental analytics engine implemented for PFZ suitability, marine risk, confidence scoring, and human-readable explanations with config-driven thresholds and unit-tested behavior.
 - 2026-08: End-to-end environmental data persistence pipeline implemented with factual observation storage, linked analytics result storage, configurable duplicate policies, one-command execution, and transaction rollback tests.
+- 2026-08: Operational marine wind/wave source integration implemented using canonical 25-point sampling, Open-Meteo wave/wind ingestion, `marine_observations`, and MVP risk scoring from Open-Meteo values only.

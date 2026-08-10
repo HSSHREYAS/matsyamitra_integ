@@ -14,6 +14,7 @@ EARTH_ENGINE_PROJECT_ID = os.getenv(
 )
 
 AOI_PATH = ANALYTICS_ROOT / "data" / "geometry" / "karnataka_aoi.geojson"
+SAMPLING_POINTS_PATH = ANALYTICS_ROOT / "data" / "geometry" / "sampling_points.geojson"
 
 
 @dataclass(frozen=True)
@@ -123,6 +124,7 @@ class PersistenceTableNames:
     extraction_runs: str = "extraction_runs"
     dataset_metadata: str = "dataset_metadata"
     analytics_results: str = "analytics_results"
+    marine_observations: str = "marine_observations"
 
 
 @dataclass(frozen=True)
@@ -247,6 +249,7 @@ DEFAULT_PERSISTENCE_TABLE_NAMES = PersistenceTableNames(
     extraction_runs=os.getenv("MATSYAMITRA_RUNS_TABLE", "extraction_runs"),
     dataset_metadata=os.getenv("MATSYAMITRA_METADATA_TABLE", "dataset_metadata"),
     analytics_results=os.getenv("MATSYAMITRA_ANALYTICS_RESULTS_TABLE", "analytics_results"),
+    marine_observations=os.getenv("MATSYAMITRA_MARINE_OBSERVATIONS_TABLE", "marine_observations"),
 )
 DEFAULT_PIPELINE_CONFIG = PipelineConfig(
     duplicate_policy=os.getenv("MATSYAMITRA_DUPLICATE_POLICY", "skip").lower(),

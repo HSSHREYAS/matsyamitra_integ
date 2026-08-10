@@ -1,6 +1,6 @@
 # MatsyaMitra Deterministic Data Analytics Model
 
-Last updated: 2026-08-01
+Last updated: 2026-08-10
 
 ## Purpose
 
@@ -189,6 +189,11 @@ Current risk inputs:
 | --- | --- |
 | WaveHeight | Primary sea-state hazard |
 | WindSpeed | Wind hazard |
+
+Operational MVP source:
+
+- `WindSpeed` and `WaveHeight` now come from Open-Meteo marine/forecast ingestion for live risk scoring.
+- GEE-derived wind and wave values remain available in `environmental_observations` for reference/validation only.
 
 Current risk weights:
 

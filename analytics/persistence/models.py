@@ -111,3 +111,28 @@ class AnalyticsResult(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     observation: Mapped[EnvironmentalObservation] = relationship(back_populates="analytics_results")
+
+
+class MarineObservation(Base):
+    __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.marine_observations
+    __table_args__ = (
+        UniqueConstraint(
+            "location_id",
+            "observation_timestamp",
+            "source",
+            name="uq_marine_observation_location_timestamp_source",
+        ),
+    )
+
+    marine_observation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    location_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    observation_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    wind_speed: Mapped[float | None] = mapped_column(Float, nullable=True)
+    wave_height: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    source_latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source_longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

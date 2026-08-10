@@ -1,6 +1,6 @@
 # MatsyaMitra Roadmap
 
-Last updated: 2026-08-01
+Last updated: 2026-08-10
 
 ## Completed
 
@@ -29,14 +29,18 @@ Last updated: 2026-08-01
 - AnalyticsResults Persistence
 - End-to-End Environmental Persistence Pipeline
 - One-Command Pipeline Entry Point
+- Live PostgreSQL Provisioning
+- Canonical Sampling Points
+- Open-Meteo Operational Wind/Wave Integration
+- MarineObservations Persistence
+- Operational Risk from Open-Meteo Wind/Wave
 
 ## Current
 
-- Live PostgreSQL and Backend API Integration Preparation
+- Backend REST API Integration Preparation
 
 ## Future
 
-- Live PostgreSQL Provisioning
 - PostgreSQL + PostGIS
 - Automated Data Ingestion
 - Data Analytics Calibration using Pandas and NumPy

@@ -1,9 +1,10 @@
+import json
 from typing import Any
 
 import ee
 import pandas as pd
 
-from .config import SamplingConfig
+from .config import SAMPLING_POINTS_PATH, SamplingConfig
 from .extractor import ExtractedImage
 
 
@@ -21,6 +22,30 @@ POINT_COLUMNS = ["SampleID", "Latitude", "Longitude"]
 
 
 def create_sampling_points(aoi: ee.Geometry, sampling: SamplingConfig) -> ee.FeatureCollection:
+    if SAMPLING_POINTS_PATH.exists():
+        features = []
+        data = json.loads(SAMPLING_POINTS_PATH.read_text(encoding="utf-8"))
+        for index, feature in enumerate(data.get("features", [])):
+            properties = feature.get("properties") or {}
+            coordinates = (feature.get("geometry") or {}).get("coordinates")
+            if coordinates is None:
+                continue
+
+            longitude, latitude = coordinates
+            sample_id = str(index)
+            features.append(
+                ee.Feature(
+                    ee.Geometry.Point([longitude, latitude]),
+                    {
+                        "SampleID": sample_id,
+                        "location_id": properties.get("location_id", f"KARN_{index + 1:03d}"),
+                    },
+                )
+            )
+
+        if features:
+            return ee.FeatureCollection(features[: sampling.sample_limit])
+
     points = ee.FeatureCollection.randomPoints(
         region=aoi,
         points=sampling.sample_limit,

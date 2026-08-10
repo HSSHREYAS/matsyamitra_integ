@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "properties": {"location_id": "KARN_001", "latitude": 14.602642, "longitude": 73.152614}, "geometry": {"type": "Point", "coordinates": [73.152614, 14.602642]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_002", "latitude": 13.714424, "longitude": 74.206417}, "geometry": {"type": "Point", "coordinates": [74.206417, 13.714424]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_003", "latitude": 14.252099, "longitude": 73.284125}, "geometry": {"type": "Point", "coordinates": [73.284125, 14.252099]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_004", "latitude": 14.576383, "longitude": 73.371932}, "geometry": {"type": "Point", "coordinates": [73.371932, 14.576383]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_005", "latitude": 12.656436, "longitude": 74.245355}, "geometry": {"type": "Point", "coordinates": [74.245355, 12.656436]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_006", "latitude": 13.87657, "longitude": 73.0982}, "geometry": {"type": "Point", "coordinates": [73.0982, 13.87657]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_007", "latitude": 13.628876, "longitude": 74.066202}, "geometry": {"type": "Point", "coordinates": [74.066202, 13.628876]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_008", "latitude": 13.697208, "longitude": 74.292278}, "geometry": {"type": "Point", "coordinates": [74.292278, 13.697208]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_009", "latitude": 13.841149, "longitude": 73.600926}, "geometry": {"type": "Point", "coordinates": [73.600926, 13.841149]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_010", "latitude": 13.701877, "longitude": 74.189533}, "geometry": {"type": "Point", "coordinates": [74.189533, 13.701877]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_011", "latitude": 13.642529, "longitude": 74.507275}, "geometry": {"type": "Point", "coordinates": [74.507275, 13.642529]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_012", "latitude": 13.819599, "longitude": 74.118591}, "geometry": {"type": "Point", "coordinates": [74.118591, 13.819599]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_013", "latitude": 14.444009, "longitude": 73.421502}, "geometry": {"type": "Point", "coordinates": [73.421502, 14.444009]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_014", "latitude": 12.360216, "longitude": 73.587784}, "geometry": {"type": "Point", "coordinates": [73.587784, 12.360216]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_015", "latitude": 12.904593, "longitude": 73.898817}, "geometry": {"type": "Point", "coordinates": [73.898817, 12.904593]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_016", "latitude": 14.288519, "longitude": 73.69884}, "geometry": {"type": "Point", "coordinates": [73.69884, 14.288519]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_017", "latitude": 14.437228, "longitude": 73.948746}, "geometry": {"type": "Point", "coordinates": [73.948746, 14.437228]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_018", "latitude": 13.343755, "longitude": 74.666625}, "geometry": {"type": "Point", "coordinates": [74.666625, 13.343755]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_019", "latitude": 13.722979, "longitude": 73.496794}, "geometry": {"type": "Point", "coordinates": [73.496794, 13.722979]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_020", "latitude": 14.117504, "longitude": 73.262162}, "geometry": {"type": "Point", "coordinates": [73.262162, 14.117504]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_021", "latitude": 13.762229, "longitude": 73.216743}, "geometry": {"type": "Point", "coordinates": [73.216743, 13.762229]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_022", "latitude": 13.522264, "longitude": 73.478449}, "geometry": {"type": "Point", "coordinates": [73.478449, 13.522264]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_023", "latitude": 12.39785, "longitude": 73.472452}, "geometry": {"type": "Point", "coordinates": [73.472452, 12.39785]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_024", "latitude": 13.763693, "longitude": 73.448016}, "geometry": {"type": "Point", "coordinates": [73.448016, 13.763693]}},
+    {"type": "Feature", "properties": {"location_id": "KARN_025", "latitude": 12.896538, "longitude": 74.71948}, "geometry": {"type": "Point", "coordinates": [74.71948, 12.896538]}}
+  ]
+}
