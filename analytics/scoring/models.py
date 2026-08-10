@@ -88,3 +88,28 @@ class PfzScoredResult:
     analytics_version: str
     environmental_observation_id: int | None = None
     source: str = "gee"
+
+
+@dataclass(frozen=True)
+class RiskScoringInput:
+    sampling_location_id: int
+    observation_timestamp: datetime
+    wind_speed: float | None
+    wave_height: float | None
+    marine_observation_id: int | None = None
+    source: str = "open-meteo"
+    data_age_hours: float = 0.0
+
+
+@dataclass(frozen=True)
+class RiskScoredResult:
+    sampling_location_id: int
+    observation_timestamp: datetime
+    wind_speed: float | None
+    wave_height: float | None
+    risk_score: float | None
+    risk_category: str
+    confidence_score: float
+    analytics_version: str
+    marine_observation_id: int | None = None
+    source: str = "open-meteo"

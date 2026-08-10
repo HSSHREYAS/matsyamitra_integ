@@ -13,9 +13,9 @@ from sqlalchemy.orm import Session
 
 from analytics.metadata import list_parameter_metadata
 from analytics.persistence.exceptions import DuplicateObservationError, InsertionError
-from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun, PfzResult
+from analytics.persistence.models import AnalyticsResult, DatasetMetadata, EnvironmentalObservation, ExtractionRun, PfzResult, RiskResult
 from analytics.schemas import EnvironmentalRecord
-from analytics.scoring.models import PfzScoredResult
+from analytics.scoring.models import PfzScoredResult, RiskScoredResult
 
 
 @dataclass(frozen=True)
@@ -401,6 +401,71 @@ class PfzRepository:
             select(PfzResult)
             .where(PfzResult.sampling_location_id == sampling_location_id)
             .order_by(PfzResult.observation_date.desc(), PfzResult.id.desc())
+            .limit(1)
+        )
+        return self.session.scalar(statement)
+
+
+class RiskRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def insert_risk_result(self, result: RiskScoredResult) -> int:
+        """Insert a single RiskScoredResult. Handles duplicates by ignoring them."""
+        existing = self.session.scalar(
+            select(RiskResult).where(
+                RiskResult.sampling_location_id == result.sampling_location_id,
+                RiskResult.observation_timestamp == result.observation_timestamp,
+                RiskResult.analytics_version == result.analytics_version,
+            )
+        )
+        if existing is not None:
+            return 0
+
+        risk_row = RiskResult(
+            sampling_location_id=result.sampling_location_id,
+            observation_timestamp=result.observation_timestamp,
+            marine_observation_id=result.marine_observation_id,
+            source=result.source,
+            wind_speed=result.wind_speed,
+            wave_height=result.wave_height,
+            risk_score=result.risk_score,
+            risk_category=result.risk_category,
+            confidence_score=result.confidence_score,
+            analytics_version=result.analytics_version,
+        )
+        self.session.add(risk_row)
+        self.session.flush()
+        return 1
+
+    def get_latest_risk_results(self) -> list[RiskResult]:
+        """Return exactly one latest Risk result for each active canonical sampling location."""
+        subquery = (
+            select(
+                RiskResult.id,
+                func.row_number()
+                .over(
+                    partition_by=RiskResult.sampling_location_id,
+                    order_by=(RiskResult.observation_timestamp.desc(), RiskResult.id.desc()),
+                )
+                .label("rn"),
+            )
+            .subquery()
+        )
+
+        statement = (
+            select(RiskResult)
+            .join(subquery, RiskResult.id == subquery.c.id)
+            .where(subquery.c.rn == 1)
+        )
+        return list(self.session.scalars(statement).all())
+
+    def get_latest_risk_result_for_location(self, sampling_location_id: int) -> RiskResult | None:
+        """Return the single latest Risk result for a specific canonical sampling location."""
+        statement = (
+            select(RiskResult)
+            .where(RiskResult.sampling_location_id == sampling_location_id)
+            .order_by(RiskResult.observation_timestamp.desc(), RiskResult.id.desc())
             .limit(1)
         )
         return self.session.scalar(statement)

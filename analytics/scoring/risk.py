@@ -1,9 +1,10 @@
+from typing import Any
 from .config import DEFAULT_SCORING_CONFIG, ScoringConfig
-from .models import ScoringInput, WeightedScore
+from .models import WeightedScore
 from .normalization import rising_risk_index, weighted_score_with_redistribution
 
 
-def calculate_risk(record: ScoringInput, config: ScoringConfig = DEFAULT_SCORING_CONFIG) -> WeightedScore:
+def calculate_risk(record: Any, config: ScoringConfig = DEFAULT_SCORING_CONFIG) -> WeightedScore:
     risk_values = {
         "wave": rising_risk_index(record.wave_height, config.wave_risk),
         "wind": rising_risk_index(record.wind_speed, config.wind_risk),

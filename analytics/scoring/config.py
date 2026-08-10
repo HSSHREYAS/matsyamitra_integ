@@ -51,6 +51,7 @@ class ScoringConfig:
     pfz_weights: dict[str, float]
     pfz_confidence_weights: dict[str, float]
     risk_weights: dict[str, float]
+    risk_confidence_weights: dict[str, float]
     confidence_weights: dict[str, float]
     pfz_categories: tuple[ScoreCategory, ...]
     risk_categories: tuple[ScoreCategory, ...]
@@ -106,6 +107,10 @@ DEFAULT_SCORING_CONFIG = ScoringConfig(
     risk_weights={
         "wave": 0.60,
         "wind": 0.40,
+    },
+    risk_confidence_weights={
+        "wind": 0.5714,
+        "wave": 0.4286,
     },
     confidence_weights={
         "sst": 0.30,
