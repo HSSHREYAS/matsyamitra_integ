@@ -1,200 +1,194 @@
-# Open-Meteo Operational Marine Integration
+# Open-Meteo Marine & Risk Integration
 
-Last updated: 2026-08-10
+Last updated: 2026-08-12
 
-## Purpose
+## 1. Overview
 
-This phase adds Open-Meteo as the operational wind and wave source for MVP risk-zone analytics.
+The Open-Meteo integration extracts hourly wind speed and wave height for the 25 canonical Karnataka sampling locations (`KARN_001`–`KARN_025`) and feeds the standalone Python Risk Analytics engine.
 
-It does not change the PFZ scoring formula, the GEE extraction framework, React Native UI, maps, heatmaps, INCOIS ingestion, currents, swell, wave period, wave direction, or scheduling.
+The system uses a two-language, two-step architecture:
 
-## Operational Decision
+* **Step 1 — TypeScript**: HTTP extraction from Open-Meteo $\rightarrow$ `marine_observations` (PostgreSQL)
+* **Step 2 — Python**: PostgreSQL read $\rightarrow$ Risk scoring $\rightarrow$ `risk_results` (PostgreSQL)
 
-PFZ inputs:
+> [!IMPORTANT]
+> PostgreSQL is the **ONLY** communication boundary between TypeScript and Python.
 
-- SST from GEE
-- Chlorophyll from GEE
+---
 
-Reference-only environmental values:
+## 2. Open-Meteo APIs Used
 
-- GEE wind speed
-- GEE wave height
+* **Wind Speed**: Open-Meteo Forecast API
+  * **URL**: `https://api.open-meteo.com/v1/forecast`
+  * **Parameter**: `wind_speed_10m` (hourly)
+  * **Note**: 10m wind speed is the standard reference height for marine surface wind.
 
-Operational MVP risk inputs:
+* **Wave Height**: Open-Meteo Marine API
+  * **URL**: `https://marine-api.open-meteo.com/v1/marine`
+  * **Parameter**: `wave_height` (significant wave height, hourly)
 
-- Open-Meteo wind speed
-- Open-Meteo wave height
+---
 
-The risk model remains:
+## 3. TypeScript Extraction Layer
 
-```text
-Risk = Wind Speed + Significant Wave Height
-```
+* **Entry point**: [`backend/marine/liveMarineIngestion.ts`](file:///e:/Major%20Project/MatsyaMitra/backend/marine/liveMarineIngestion.ts)
+* **Key files**:
+  * [`backend/marine/ingest.ts`](file:///e:/Major%20Project/MatsyaMitra/backend/marine/ingest.ts)
+  * [`backend/marine/repository.ts`](file:///e:/Major%20Project/MatsyaMitra/backend/marine/repository.ts)
+  * [`backend/marine/config.ts`](file:///e:/Major%20Project/MatsyaMitra/backend/marine/config.ts)
+  * [`backend/marine/types.ts`](file:///e:/Major%20Project/MatsyaMitra/backend/marine/types.ts)
 
-## Canonical Sampling Points
+### Ingestion Flow
 
-Canonical sampling points are stored at:
+1. Load 25 canonical locations from [`sampling_points.geojson`](file:///e:/Major%20Project/MatsyaMitra/analytics/data/geometry/sampling_points.geojson).
+2. Fetch hourly `wind_speed_10m` from Open-Meteo Forecast API for all 25 locations.
+3. Fetch hourly `wave_height` from Open-Meteo Marine API for all 25 locations.
+4. Match API responses to canonical `location_id` (`KARN_001`–`KARN_025`).
+5. Store source grid coordinates (`source_latitude`, `source_longitude`) separately from canonical coordinates.
+6. Insert observations into `marine_observations` with configurable duplicate policy.
+7. Print ingestion summary (inserted/skipped/updated/replaced).
 
-```text
-analytics/data/geometry/sampling_points.geojson
-```
+### Environment Variables
 
-The file contains 25 stable WGS84 points:
+| Variable | Requirement | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `MATSYAMITRA_DATABASE_URL` | **Required** | — | PostgreSQL connection string |
+| `MATSYAMITRA_DUPLICATE_POLICY` | Optional | `skip` | Ingestion duplicate policy (`skip`, `update`, `replace`) |
+| `MATSYAMITRA_SAMPLING_POINTS_PATH` | Optional | `analytics/data/geometry/sampling_points.geojson` | Path to canonical sampling points GeoJSON |
 
-```text
-KARN_001 ... KARN_025
-```
-
-These points are reused by:
-
-- GEE extraction
-- Open-Meteo ingestion
-- Future frontend map layers
-
-Open-Meteo returned grid coordinates are stored separately and must not replace canonical map coordinates.
-
-## Implemented TypeScript Modules
-
-```text
-backend/marine/
-  config.ts
-  samplingPoints.ts
-  openMeteoClient.ts
-  repository.ts
-  risk.ts
-  ingest.ts
-  liveMarineIngestion.ts
-  index.ts
-```
-
-## API Sources
-
-Open-Meteo Marine API:
-
-```text
-https://marine-api.open-meteo.com/v1/marine
-```
-
-Used for:
-
-```text
-wave_height
-```
-
-Open-Meteo Forecast API:
-
-```text
-https://api.open-meteo.com/v1/forecast
-```
-
-Used for:
-
-```text
-wind_speed_10m
-```
-
-Reason:
-
-The current Open-Meteo Marine API provides wave variables, but the live API does not return `wind_speed_10m`. The implementation therefore uses Open-Meteo Marine for wave height and Open-Meteo Forecast for wind speed while keeping both values under the Open-Meteo operational source.
-
-## Database Table
-
-Table:
-
-```text
-marine_observations
-```
-
-Fields:
-
-```text
-marine_observation_id
-location_id
-latitude
-longitude
-observation_timestamp
-wind_speed
-wave_height
-source
-source_latitude
-source_longitude
-source_metadata
-created_at
-```
-
-Duplicate key:
-
-```text
-location_id + observation_timestamp + source
-```
-
-Supported duplicate policies:
-
-- `skip`
-- `replace`
-- `update`
-
-## Commands
-
-Run focused tests:
+### Run Command
 
 ```powershell
-npm run marine:test
+npx tsx backend/marine/liveMarineIngestion.ts
 ```
 
-Run live ingestion:
+---
+
+## 4. `marine_observations` Table
+
+### Key Columns
+
+* `marine_observation_id` (PK)
+* `sampling_location_id` (FK to `sampling_locations`, nullable, backfilled)
+* `location_id` (`KARN_xxx` string)
+* `latitude` (canonical WGS84)
+* `longitude` (canonical WGS84)
+* `observation_timestamp` (tz-aware datetime)
+* `wind_speed` ($m/s$)
+* `wave_height` ($m$)
+* `source` (`'open-meteo'`)
+* `source_latitude` (Open-Meteo grid-cell)
+* `source_longitude` (Open-Meteo grid-cell)
+* `source_metadata` (JSON)
+* `created_at`
+
+### Unique Constraint
+
+```sql
+UNIQUE (location_id, observation_timestamp, source)
+```
+
+> [!NOTE]
+> Canonical latitude/longitude are preserved even when Open-Meteo returns different grid-cell coordinates.
+
+---
+
+## 5. Python Risk Pipeline Layer
+
+* **Coordinator**: [`analytics/live_open_meteo_pipeline.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/live_open_meteo_pipeline.py)
+* **Key files**:
+  * [`analytics/persistence/marine_repository.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/persistence/marine_repository.py) (`MarineObservationRepository`: backfill + latest obs query)
+  * [`analytics/persistence/repository.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/persistence/repository.py) (`RiskRepository`)
+  * [`analytics/scoring/risk_engine.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/risk_engine.py) ([`score_risk_record`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/risk_engine.py))
+  * [`analytics/scoring/models.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/models.py) ([`RiskScoringInput`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/models.py), [`RiskScoredResult`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/models.py))
+
+### Pipeline Flow
+
+1. Invoke TypeScript ingestion via subprocess (`npx tsx backend/marine/liveMarineIngestion.ts`).
+2. Backfill `sampling_location_id` for any `marine_observations` missing it (`MarineObservationRepository`).
+3. Fetch latest marine observation per canonical location.
+4. Calculate `data_age_hours = current UTC time - observation_timestamp` (REAL value, not default).
+5. Build [`RiskScoringInput`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/models.py) (`wind_speed`, `wave_height`, `data_age_hours`, `source='open-meteo'`).
+6. Score via [`score_risk_record()`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/risk_engine.py) — Python is the sole authoritative Risk engine.
+7. Insert into `risk_results` via `RiskRepository` (duplicate skip policy).
+8. Print PostgreSQL verification report.
+
+### Run Command
 
 ```powershell
-$env:MATSYAMITRA_DATABASE_URL="postgresql+psycopg2://postgres:admin@localhost:5432/matsyamitra"
-$env:MATSYAMITRA_DUPLICATE_POLICY="update"
-npm run marine:live
+$env:MATSYAMITRA_DATABASE_URL='postgresql+psycopg2://postgres:admin@localhost:5432/matsyamitra'
+$env:PYTHONPATH='e:\Major Project\MatsyaMitra'
+analytics\.venv\Scripts\python.exe analytics\live_open_meteo_pipeline.py
 ```
 
-## Live Validation
+---
 
-Live validation completed on 2026-08-10.
+## 6. Risk Scoring (summary)
 
-Result:
+* **Inputs**: Wind Speed + Wave Height **ONLY**
+* **NOT used**: SST, Chlorophyll, PFZ score (these do not appear on [`RiskScoringInput`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/models.py))
+* **Weights (normalized)**: Wind = 0.5714, Wave = 0.4286
+* **Formula**: $\text{RiskScore} = \text{weighted\_risk\_index} \times 10$ ($0$ to $10$)
+* **`source` field**: metadata only — does not affect numeric score (enables future INCOIS replacement)
+* **Categories**: `Safe` / `Low Risk` / `Moderate Risk` / `High Risk` / `Extreme Risk`
+* **Confidence**: reduced by missing parameters and data age
 
-```text
-Requested locations: 25
-Parsed observations: 25
-Inserted: 0
-Skipped: 0
-Updated: 25
-Replaced: 0
-Warnings: None
-```
+---
 
-PostgreSQL verification:
+## 7. Coordinate Handling
 
-```text
-Total Open-Meteo marine rows: 25
-Valid wind speed values: 25
-Missing wind speed values: 0
-Valid wave height values: 25
-Missing wave height values: 0
-Observation timestamp: 2026-08-10 23:00 IST
-```
+* Canonical coordinates (from [`sampling_points.geojson`](file:///e:/Major%20Project/MatsyaMitra/analytics/data/geometry/sampling_points.geojson)) are the authoritative Map/API coordinates.
+* Open-Meteo may adjust requested coordinates to nearest grid cell centre.
+* Both are stored: canonical in `location_id`/`latitude`/`longitude`, source grid in `source_latitude`/`source_longitude`.
+* Canonical coordinates are **NEVER** overwritten.
 
-Sample record:
+---
 
-```text
-location_id: KARN_001
-canonical latitude: 14.602642
-canonical longitude: 73.152614
-source latitude: 14.625
-source longitude: 73.125015
-wind_speed: 7.82 m/s
-wave_height: 2.76 m
-risk_score: 6.41
-risk_category: High Risk
-```
+## 8. Legacy Risk Removal (Module 5)
 
-## Current Limitations
+Prior to Module 5, [`backend/marine/ingest.ts`](file:///e:/Major%20Project/MatsyaMitra/backend/marine/ingest.ts) contained TypeScript risk scoring logic.
 
-- Scheduler is not implemented.
-- REST APIs are not implemented.
-- React Native visualization is not connected to this table yet.
-- Heatmaps are not implemented.
-- Source metadata stores both marine and wind API grid details, but only marine grid coordinates are promoted to top-level `source_latitude` and `source_longitude`.
+This was **REMOVED** in Module 5. `marine_observations` now stores **ONLY** raw observations.
+
+Python ([`analytics/scoring/risk_engine.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/scoring/risk_engine.py)) is the sole authoritative Risk analytics engine. This ensures Risk scoring is deterministic, testable, and version-controlled in one place.
+
+---
+
+## 9. Operational Frequency
+
+* **INTENDED**: hourly (`observation_timestamp` changes every hour)
+* **CURRENT STATUS**: Manual — no automated scheduler implemented yet
+* Each hourly run produces new `risk_results` rows for that hour
+* Previous hourly records are preserved (not overwritten)
+* Module 7 will implement the hourly scheduler
+
+---
+
+## 10. Testing
+
+* **Integration tests**: [`analytics/tests/test_open_meteo_integration.py`](file:///e:/Major%20Project/MatsyaMitra/analytics/tests/test_open_meteo_integration.py)
+* **Tests cover**: canonical mapping, hourly coexistence, freshness calculation, risk source independence
+* **Full Python suite**: 118 tests passing
+* **TypeScript compilation**: `npx tsc --noEmit` (no errors)
+
+---
+
+## 11. Live Verification (2026-08-10)
+
+* 25 canonical locations extracted
+* 25 `marine_observations` rows (wind + wave)
+* 25 `risk_results` rows scored and persisted
+* **Risk score range**: 4.56 – 6.75
+* **Risk categories**: Moderate Risk / High Risk
+* **Source**: `open-meteo`
+* **`data_age_hours`**: calculated from actual `observation_timestamp`
+
+---
+
+## 12. Limitations
+
+* No automated scheduler yet (Module 7)
+* Open-Meteo grid-cell coordinate shift documented but harmless (both stored)
+* Non-commercial API rate limits apply
+* INCOIS as alternative source: planned but not implemented
+* `data_age_hours` defaults to 0.0 in unit tests; live pipeline uses real timestamps
