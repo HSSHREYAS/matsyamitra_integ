@@ -8,6 +8,9 @@
     "lint": "eslint .",
     "marine:live": "node -e \"require('ts-node').register({compilerOptions:{module:'CommonJS'}}); require('./backend/marine/liveMarineIngestion.ts')\"",
     "marine:test": "jest __tests__/marineOpenMeteo.test.ts --runInBand",
+    "incois:scrape": "python analytics/incois_scheduler.py --once",
+    "incois:schedule": "python analytics/incois_scheduler.py",
+    "incois:test": "python -m pytest analytics/incois/tests.py -v",
     "start": "react-native start",
     "test": "jest"
   },

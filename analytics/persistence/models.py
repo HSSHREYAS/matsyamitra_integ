@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from analytics.config import DEFAULT_PERSISTENCE_TABLE_NAMES
@@ -194,6 +194,64 @@ class MarineObservation(Base):
     )
     risk_results: Mapped[list["RiskResult"]] = relationship(
         back_populates="marine_observation",
+    )
+
+
+class IncoisAdvisory(Base):
+    """
+    Raw INCOIS PFZ text advisory record scraped from the Marine Fisheries portal.
+
+    Each row represents one Potential Fishing Zone announced by INCOIS for a
+    specific landing center on a given advisory date.
+
+    Phase 1: Stores advisory zone data only (no SST/Chlorophyll).
+    Phase 2 (future): Will be enriched with GEE environmental cross-reference.
+    """
+
+    __tablename__ = DEFAULT_PERSISTENCE_TABLE_NAMES.incois_advisories
+    __table_args__ = (
+        UniqueConstraint(
+            "advisory_date",
+            "latitude",
+            "longitude",
+            name="uq_incois_advisory_date_lat_lon",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    # Advisory metadata
+    advisory_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    sector_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+
+    # Landing center and navigation data from the INCOIS text advisory
+    landing_center: Mapped[str] = mapped_column(String(128), nullable=False)
+    bearing_degrees: Mapped[float | None] = mapped_column(Float, nullable=True)
+    distance_km: Mapped[float | None] = mapped_column(Float, nullable=True)
+    depth_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # Zone coordinates
+    latitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+
+    # Audit trail
+    raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scraped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    # Spatial match to nearest canonical KARN_XXX sampling location
+    nearest_sampling_location_id: Mapped[int | None] = mapped_column(
+        ForeignKey(f"{DEFAULT_PERSISTENCE_TABLE_NAMES.sampling_locations}.id"),
+        nullable=True,
+        index=True,
+    )
+    distance_to_nearest_km: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    # Relationship to canonical location (optional — may be None if unmatched)
+    nearest_sampling_location: Mapped["SamplingLocation | None"] = relationship(
+        "SamplingLocation",
+        foreign_keys=[nearest_sampling_location_id],
     )
 
 
