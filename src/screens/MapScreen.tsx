@@ -1,9 +1,10 @@
 /**
  * MapScreen — Marine Navigation with Fishing/Risk zone toggle
+ * Connected to live MatsyaMitra 25 canonical locations telemetry.
  */
 
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
@@ -14,11 +15,15 @@ import RiskZoneOverlay from '../components/map/RiskZoneOverlay';
 import FishingBottomSheet from '../components/map/FishingBottomSheet';
 import RiskBottomSheet from '../components/map/RiskBottomSheet';
 import {
-  mockFishingZones,
   mockRiskZones,
   mapInitialRegion,
 } from '../data/mockZones';
 import type { FishingZone, RiskZone } from '../data/mockZones';
+import {
+  useCurrentState,
+  transformCurrentStatesToFishingZones,
+  transformCurrentStatesToRiskZones,
+} from '../services/api';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const ZOOM_STEP = 0.5;
@@ -28,12 +33,41 @@ const MAX_LONGITUDE_DELTA = 30;
 
 const MapScreen: React.FC = () => {
   const [activeMode, setActiveMode] = useState(0); // 0 = Fishing, 1 = Risk
-  const [selectedFishingZone, setSelectedFishingZone] = useState<FishingZone | null>(
-    mockFishingZones[0]
-  );
-  const [selectedRiskZone, setSelectedRiskZone] = useState<RiskZone | null>(null);
   const [region, setRegion] = useState<Region>(mapInitialRegion);
   const mapRef = useRef<MapView>(null);
+
+  // Live telemetry hook
+  const { states, isOnline, refresh } = useCurrentState('KARN_001');
+
+  // Compute live fishing zones from 25 canonical points
+  const fishingZones = useMemo<FishingZone[]>(() => {
+    if (states && states.length > 0) {
+      return transformCurrentStatesToFishingZones(states);
+    }
+    return [];
+  }, [states]);
+
+  // Compute live risk zones from 25 canonical points (or fallback)
+  const riskZones = useMemo<RiskZone[]>(() => {
+    if (states && states.length > 0) {
+      const liveZones = transformCurrentStatesToRiskZones(states);
+      if (liveZones.length > 0) return liveZones;
+    }
+    return mockRiskZones;
+  }, [states]);
+
+  const [selectedFishingZone, setSelectedFishingZone] = useState<FishingZone | null>(null);
+  const [selectedRiskZone, setSelectedRiskZone] = useState<RiskZone | null>(null);
+
+  useEffect(() => {
+    if (fishingZones.length > 0) {
+      if (!selectedFishingZone || !fishingZones.some((z) => z.id === selectedFishingZone.id)) {
+        setSelectedFishingZone(fishingZones[0]);
+      }
+    } else {
+      setSelectedFishingZone(null);
+    }
+  }, [fishingZones, selectedFishingZone]);
 
   const handleZoomIn = () => {
     const nextRegion = {
@@ -75,8 +109,23 @@ const MapScreen: React.FC = () => {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <Icon name="menu" size={24} color={Colors.textOnDark} />
-        <Text style={styles.topBarTitle}>Marine Navigation</Text>
-        <Icon name="layers-outline" size={24} color={Colors.primaryAccent} />
+        <View style={styles.titleContainer}>
+          <Text style={styles.topBarTitle}>Marine Navigation</Text>
+          <View style={styles.subStatusRow}>
+            <View
+              style={[
+                styles.liveDot,
+                { backgroundColor: isOnline ? Colors.safe : Colors.textSubtleOnDark },
+              ]}
+            />
+            <Text style={styles.subStatusText}>
+              {isOnline ? '25 Canonical Points Active' : 'Offline / Mock Data'}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => refresh()}>
+          <Icon name="refresh" size={22} color={Colors.primaryAccent} />
+        </TouchableOpacity>
       </View>
 
       {/* Map */}
@@ -91,13 +140,13 @@ const MapScreen: React.FC = () => {
           onRegionChangeComplete={setRegion}>
           {activeMode === 0 && (
             <FishingZoneOverlay
-              zones={mockFishingZones}
+              zones={fishingZones}
               onZonePress={handleFishingZonePress}
             />
           )}
           {activeMode === 1 && (
             <RiskZoneOverlay
-              zones={mockRiskZones}
+              zones={riskZones}
               onZonePress={handleRiskZonePress}
             />
           )}
@@ -112,6 +161,19 @@ const MapScreen: React.FC = () => {
           onZoomOut={handleZoomOut}
           onMyLocation={handleMyLocation}
         />
+
+        {/* Empty PFZ Banner (shown in Fishing mode when no live PFZ data is available yet) */}
+        {activeMode === 0 && fishingZones.length === 0 && (
+          <View style={styles.emptyPfzBanner}>
+            <View style={styles.emptyPfzHeader}>
+              <Icon name="satellite-variant" size={18} color={Colors.primaryAccent} />
+              <Text style={styles.emptyPfzTitle}>PFZ TELEMETRY PENDING</Text>
+            </View>
+            <Text style={styles.emptyPfzText}>
+              PFZ data currently unavailable. Live fishing-zone data will appear when satellite/PFZ processing is available.
+            </Text>
+          </View>
+        )}
 
         {/* Risk Legend (only shown in Risk mode) */}
         {activeMode === 1 && (
@@ -165,9 +227,27 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryBackground,
     zIndex: 20,
   },
+  titleContainer: {
+    alignItems: 'center',
+  },
   topBarTitle: {
     ...Typography.screenTitle,
     color: Colors.textOnDark,
+  },
+  subStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  subStatusText: {
+    ...Typography.micro,
+    color: Colors.textSubtleOnDark,
   },
   mapContainer: {
     flex: 1,
@@ -175,6 +255,35 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
+  },
+  emptyPfzBanner: {
+    position: 'absolute',
+    top: 90,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    backgroundColor: 'rgba(10, 22, 40, 0.94)',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.primaryAccent,
+    zIndex: 10,
+  },
+  emptyPfzHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  emptyPfzTitle: {
+    ...Typography.chip,
+    color: Colors.primaryAccent,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  emptyPfzText: {
+    ...Typography.bodySmall,
+    color: Colors.textSubtleOnDark,
+    lineHeight: 18,
   },
   legendCard: {
     position: 'absolute',

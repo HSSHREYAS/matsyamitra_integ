@@ -429,6 +429,19 @@ class CurrentStateTests(unittest.TestCase):
         expected = {f"KARN_{i:03d}" for i in range(1, 26)}
         self.assertEqual(location_ids, expected)
 
+    def test_l2_all_locations_have_city_name(self):
+        """Output states must all include human-readable coastal city names."""
+        states = get_current_environmental_state(self.session)
+        for s in states:
+            self.assertIsNotNone(s.city_name)
+            self.assertTrue(len(s.city_name) > 0)
+            self.assertNotEqual(s.city_name, s.location_id)
+        # Verify KARN_001 is Karwar and KARN_025 is Mangalore
+        karn_001 = next(s for s in states if s.location_id == "KARN_001")
+        self.assertEqual(karn_001.city_name, "Karwar")
+        karn_025 = next(s for s in states if s.location_id == "KARN_025")
+        self.assertEqual(karn_025.city_name, "Mangalore")
+
     # ------------------------------------------------------------------
     # M. NO DATA MUTATION — read-only verification
     # ------------------------------------------------------------------

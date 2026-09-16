@@ -101,7 +101,8 @@ export function parseOpenMeteoResponse(
     const hourly = locationResponse.hourly ?? {};
     const times = hourly.time ?? [];
     const selectedIndex = selectHourlyIndex(times, targetTime);
-    const timestamp = times[selectedIndex];
+    const rawTimestamp = times[selectedIndex];
+    const timestamp = rawTimestamp ? normalizeIsoTimestamp(rawTimestamp) : '';
 
     if (!timestamp) {
       warnings.push(`No hourly timestamp returned for ${point.locationId}.`);
@@ -158,8 +159,10 @@ export function parseCombinedOpenMeteoResponse(
     const marineTimes = marine.hourly?.time ?? [];
     const windTimes = wind.hourly?.time ?? [];
     const marineIndex = selectHourlyIndex(marineTimes, targetTime);
-    const timestamp = marineTimes[marineIndex] ?? windTimes[selectHourlyIndex(windTimes, targetTime)];
-    const windIndex = timestamp ? windTimes.indexOf(timestamp) : selectHourlyIndex(windTimes, targetTime);
+    const rawTimestamp =
+      marineTimes[marineIndex] ?? windTimes[selectHourlyIndex(windTimes, targetTime)];
+    const timestamp = rawTimestamp ? normalizeIsoTimestamp(rawTimestamp) : '';
+    const windIndex = rawTimestamp ? windTimes.indexOf(rawTimestamp) : selectHourlyIndex(windTimes, targetTime);
 
     if (!timestamp) {
       warnings.push(`No matching hourly timestamp returned for ${point.locationId}.`);
@@ -204,6 +207,16 @@ export function parseCombinedOpenMeteoResponse(
   return {observations: observations.filter(validateMarineObservation), warnings};
 }
 
+export function normalizeIsoTimestamp(timeStr: string): string {
+  if (!timeStr) {
+    return timeStr;
+  }
+  if (timeStr.includes('Z') || timeStr.includes('+') || timeStr.slice(10).includes('-')) {
+    return timeStr;
+  }
+  return timeStr.length === 16 ? `${timeStr}:00Z` : `${timeStr}Z`;
+}
+
 function normalizeResponseArray(payload: unknown): OpenMeteoLocationResponse[] {
   if (Array.isArray(payload)) {
     return payload as OpenMeteoLocationResponse[];
@@ -211,7 +224,18 @@ function normalizeResponseArray(payload: unknown): OpenMeteoLocationResponse[] {
   return [payload as OpenMeteoLocationResponse];
 }
 
-function selectHourlyIndex(times: string[], targetTime?: string): number {
+function parseTimestampMs(timeStr: string): number {
+  const normalized =
+    timeStr.includes('Z') || timeStr.includes('+') || timeStr.slice(10).includes('-')
+      ? timeStr
+      : timeStr.length === 16
+      ? `${timeStr}:00Z`
+      : `${timeStr}Z`;
+  const parsed = Date.parse(normalized);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+export function selectHourlyIndex(times: string[], targetTime?: string): number {
   if (times.length === 0) {
     return -1;
   }
@@ -221,7 +245,24 @@ function selectHourlyIndex(times: string[], targetTime?: string): number {
       return exact;
     }
   }
-  return times.length - 1;
+
+  const cutoffMs = targetTime ? parseTimestampMs(targetTime) : Date.now();
+
+  let bestIndex = -1;
+  for (let i = 0; i < times.length; i++) {
+    const tMs = parseTimestampMs(times[i]);
+    if (tMs <= cutoffMs) {
+      bestIndex = i;
+    } else {
+      break;
+    }
+  }
+
+  if (bestIndex === -1) {
+    return 0;
+  }
+
+  return bestIndex;
 }
 
 function normalizeOptionalNumber(value: unknown): number | null {

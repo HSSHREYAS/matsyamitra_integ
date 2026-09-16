@@ -37,6 +37,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from analytics.config import CANONICAL_CITY_NAMES
 from analytics.persistence.models import PfzResult, RiskResult, SamplingLocation
 from analytics.persistence.repository import PfzRepository, RiskRepository
 
@@ -117,6 +118,8 @@ class RiskState:
     source: str
     age_hours: float
     status: str  # CURRENT | STALE | MISSING — never affects scoring
+    wind_speed: Optional[float] = None
+    wave_height: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -129,6 +132,7 @@ class CurrentLocationEnvironmentalState:
 
     sampling_location_id: int
     location_id: str
+    city_name: str
     latitude: float
     longitude: float
     pfz: Optional[PfzState]
@@ -213,6 +217,8 @@ def _build_risk_state(
         source=risk.source,
         age_hours=age,
         status=_risk_status(age, cfg),
+        wind_speed=risk.wind_speed,
+        wave_height=risk.wave_height,
     )
 
 
@@ -260,11 +266,13 @@ def get_current_environmental_state(
     for loc in locations:
         pfz_row = pfz_by_loc.get(loc.id)
         risk_row = risk_by_loc.get(loc.id)
+        city_name = getattr(loc, "city_name", None) or CANONICAL_CITY_NAMES.get(loc.location_id, loc.location_id)
 
         results.append(
             CurrentLocationEnvironmentalState(
                 sampling_location_id=loc.id,
                 location_id=loc.location_id,
+                city_name=city_name,
                 latitude=loc.latitude,
                 longitude=loc.longitude,
                 pfz=_build_pfz_state(pfz_row, now, freshness_config) if pfz_row else None,
@@ -301,10 +309,12 @@ def get_current_environmental_state_for_location(
 
     pfz_row: Optional[PfzResult] = pfz_repo.get_latest_pfz_result_for_location(loc.id)
     risk_row: Optional[RiskResult] = risk_repo.get_latest_risk_result_for_location(loc.id)
+    city_name = getattr(loc, "city_name", None) or CANONICAL_CITY_NAMES.get(loc.location_id, loc.location_id)
 
     return CurrentLocationEnvironmentalState(
         sampling_location_id=loc.id,
         location_id=loc.location_id,
+        city_name=city_name,
         latitude=loc.latitude,
         longitude=loc.longitude,
         pfz=_build_pfz_state(pfz_row, now, freshness_config) if pfz_row else None,

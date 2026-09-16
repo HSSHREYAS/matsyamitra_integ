@@ -29,7 +29,7 @@ def run_typescript_ingestion():
         print("TypeScript extraction failed:")
         print(result.stdout)
         print(result.stderr)
-        sys.exit(1)
+        raise RuntimeError(f"TypeScript extraction failed with code {result.returncode}")
     
     print(result.stdout)
 

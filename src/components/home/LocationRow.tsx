@@ -17,29 +17,52 @@ const LocationRow: React.FC<LocationRowProps> = ({ location, onPress }) => {
     <TouchableOpacity
       onPress={onPress}
       style={styles.container}
-      activeOpacity={0.7}>
-      <Icon name="map-marker" size={18} color={Colors.primaryAccent} />
-      <Text style={styles.locationText}>{location}</Text>
-      <Icon
-        name="chevron-down"
-        size={18}
-        color={Colors.textSubtleOnDark}
-      />
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`Current location: ${location}. Tap to change coastal location`}>
+      <View style={styles.pill}>
+        <Icon name="map-marker" size={18} color={Colors.primaryAccent} />
+        <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+          {location}
+        </Text>
+        <Icon
+          name="chevron-down"
+          size={18}
+          color={Colors.primaryAccent}
+          style={styles.chevronIcon}
+        />
+      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     gap: Spacing.xs,
   },
   locationText: {
     ...Typography.body,
+    fontSize: 14,
+    fontWeight: '600',
     color: Colors.textOnDark,
+    flexShrink: 1,
+  },
+  chevronIcon: {
+    marginLeft: 2,
   },
 });
 

@@ -16,6 +16,34 @@ EARTH_ENGINE_PROJECT_ID = os.getenv(
 AOI_PATH = ANALYTICS_ROOT / "data" / "geometry" / "karnataka_aoi.geojson"
 SAMPLING_POINTS_PATH = ANALYTICS_ROOT / "data" / "geometry" / "sampling_points.geojson"
 
+CANONICAL_CITY_NAMES: dict[str, str] = {
+    "KARN_001": "Karwar",
+    "KARN_002": "Kundapura",
+    "KARN_003": "Kumta",
+    "KARN_004": "Ankola",
+    "KARN_005": "Someshwara",
+    "KARN_006": "Bhatkal Deep Sea",
+    "KARN_007": "Malpe Offshore",
+    "KARN_008": "Maravanthe",
+    "KARN_009": "Baindur",
+    "KARN_010": "Kundapura Coast",
+    "KARN_011": "Gangolli",
+    "KARN_012": "Shiroor",
+    "KARN_013": "Gokarna",
+    "KARN_014": "Mangalore Deep Sea",
+    "KARN_015": "Surathkal",
+    "KARN_016": "Honnavar",
+    "KARN_017": "Belekeri",
+    "KARN_018": "Malpe",
+    "KARN_019": "Bhatkal Offshore",
+    "KARN_020": "Murudeshwar",
+    "KARN_021": "Netrani Deep Sea",
+    "KARN_022": "Kaup",
+    "KARN_023": "Ullal Offshore",
+    "KARN_024": "Manki",
+    "KARN_025": "Mangalore",
+}
+
 
 @dataclass(frozen=True)
 class DateRange:

@@ -80,10 +80,10 @@ def parse_advisory_html(html: str, advisory_date: Optional[date] = None) -> list
         logger.warning("Empty HTML passed to parser.")
         return []
 
-    if advisory_date is None:
-        advisory_date = datetime.now(timezone.utc).date()
-
-    soup = BeautifulSoup(html, "lxml")
+    try:
+        soup = BeautifulSoup(html, "lxml")
+    except Exception:
+        soup = BeautifulSoup(html, "html.parser")
 
     # 1. Try to detect "no advisory" messages before looking for tables
     if _detect_no_advisory(soup):

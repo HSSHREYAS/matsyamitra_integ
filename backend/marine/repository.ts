@@ -107,9 +107,10 @@ export async function persistMarineObservations(
           source,
           source_latitude,
           source_longitude,
-          source_metadata
+          source_metadata,
+          created_at
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `,
       [
         observation.locationId,
@@ -122,6 +123,7 @@ export async function persistMarineObservations(
         observation.sourceLatitude,
         observation.sourceLongitude,
         observation.sourceMetadata ?? {},
+        new Date().toISOString(),
       ],
     );
     summary.inserted += 1;

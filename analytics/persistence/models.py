@@ -43,6 +43,7 @@ class SamplingLocation(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     location_id: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True)
+    city_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

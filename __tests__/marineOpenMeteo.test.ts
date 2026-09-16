@@ -5,6 +5,7 @@ import {
   fetchMarineData,
   parseCombinedOpenMeteoResponse,
   parseOpenMeteoResponse,
+  selectHourlyIndex,
 } from '../backend/marine/openMeteoClient';
 import {
   createMarineObservationsTable,
@@ -173,6 +174,27 @@ describe('Open-Meteo marine integration', () => {
     expect(geeReference.windSpeed).toBe(60);
     expect(risk.riskScore).toBe(5);
     expect(risk.riskCategory).toBe('Moderate Risk');
+  });
+
+  test('selects hourly index corresponding to current/latest available observation', () => {
+    const times = [
+      '2026-09-13T00:00',
+      '2026-09-13T01:00',
+      '2026-09-13T02:00',
+      '2026-09-13T03:00',
+    ];
+
+    // Exact target time selection
+    expect(selectHourlyIndex(times, '2026-09-13T02:00')).toBe(2);
+
+    // Target time between hours selects most recent past hour
+    expect(selectHourlyIndex(times, '2026-09-13T02:30:00Z')).toBe(2);
+
+    // Empty times array returns -1
+    expect(selectHourlyIndex([])).toBe(-1);
+
+    // Past times array without targetTime selects latest available
+    expect(selectHourlyIndex(times)).toBe(3);
   });
 });
 
