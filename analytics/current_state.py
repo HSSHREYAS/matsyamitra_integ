@@ -105,6 +105,8 @@ class PfzState:
     Schema limitation: pfz_results has no source_timestamp column.
     """
     status: str  # CURRENT | STALE | MISSING — never affects scoring
+    sst: Optional[float] = None
+    chlorophyll: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -197,6 +199,8 @@ def _build_pfz_state(
         source=pfz.source,
         age_hours=age,
         status=_pfz_status(age, cfg),
+        sst=pfz.sst,
+        chlorophyll=pfz.chlorophyll,
     )
 
 

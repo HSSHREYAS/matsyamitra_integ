@@ -1,15 +1,21 @@
 /**
- * HomeScreen — Main dashboard with live weather telemetry, INCOIS advisories, greeting hero, and quick actions.
- * Connected exclusively to live MatsyaMitra REST API with light coastal aesthetic.
+ * HomeScreen — Main dashboard with full-bleed ocean sunrise hero header,
+ * live GEE satellite telemetry, INCOIS advisories, view on map, and 2x2 quick actions.
  */
 
 import React, { useState, useMemo } from 'react';
-import { ScrollView, StyleSheet, StatusBar, RefreshControl, View, Text } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  RefreshControl,
+  View,
+  Text,
+  TouchableOpacity,
+  ImageBackground,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../theme';
 import TopBar from '../components/home/TopBar';
-import GreetingBanner from '../components/home/GreetingBanner';
-import LocationRow from '../components/home/LocationRow';
 import LocationSelectorModal from '../components/home/LocationSelectorModal';
 import WeatherCard from '../components/home/WeatherCard';
 import FishingAdvisory from '../components/home/FishingAdvisory';
@@ -26,7 +32,11 @@ import {
 } from '../services/api';
 import { useLanguage } from '../i18n';
 
-const HomeScreen: React.FC = () => {
+interface HomeScreenProps {
+  navigation?: any;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { t } = useLanguage();
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
   const [activeModal, setActiveModal] = useState<'catch' | 'distress' | 'equipment' | 'fleet' | null>(null);
@@ -44,7 +54,6 @@ const HomeScreen: React.FC = () => {
   const {
     advisories: liveAdvisories,
     isLoading: isAdvLoading,
-    isOnline: isAdvOnline,
     refresh: refreshAdvisories,
   } = useAdvisories();
 
@@ -54,7 +63,6 @@ const HomeScreen: React.FC = () => {
     await Promise.all([refreshCurrentState(), refreshAdvisories()]);
   };
 
-  // Open location selector modal
   const handleLocationPress = () => {
     setIsLocationModalVisible(true);
   };
@@ -63,7 +71,7 @@ const HomeScreen: React.FC = () => {
     selectLocation(locationId);
   };
 
-  // Derive weather data: strictly live backend current state (no mock fallback)
+  // Derive weather data: strictly live backend current state with GEE observations
   const weatherData = useMemo(() => {
     if (selectedState && (selectedState.risk || selectedState.pfz)) {
       return transformCurrentStateToWeather(selectedState);
@@ -71,7 +79,7 @@ const HomeScreen: React.FC = () => {
     return null;
   }, [selectedState]);
 
-  // Derive advisories: strictly live INCOIS bulletins (no mock fallback)
+  // Derive advisories: strictly live INCOIS bulletins
   const activeAdvisories = useMemo(() => {
     if (liveAdvisories && liveAdvisories.length > 0) {
       return liveAdvisories;
@@ -79,15 +87,13 @@ const HomeScreen: React.FC = () => {
     return [];
   }, [liveAdvisories]);
 
-  const currentLocationLabel = selectedState
-    ? `${getCanonicalCityName(selectedState.location_id, selectedState.city_name)} (${selectedState.latitude.toFixed(2)}°N, ${selectedState.longitude.toFixed(2)}°E)`
-    : states.length > 0
-    ? `${getCanonicalCityName(states[0].location_id, states[0].city_name)} (${states[0].latitude.toFixed(2)}°N, ${states[0].longitude.toFixed(2)}°E)`
-    : 'Karnataka Coast (Connecting...)';
+  const currentCityName = selectedState
+    ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
+    : 'Karwar';
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.primaryBackground} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
 
       <ScrollView
         style={styles.container}
@@ -97,76 +103,91 @@ const HomeScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor={Colors.primaryAccent}
-            colors={[Colors.primaryAccent]}
+            tintColor="#0284C7"
+            colors={['#0284C7']}
           />
         }>
-        {/* Top Bar with Brand, Subtitle & Language Toggle */}
-        <TopBar
-          onMenuPress={() => {}}
-          onNotificationPress={() => {}}
-        />
+        {/* Full-Bleed Ocean Sunrise Hero Header */}
+        <ImageBackground
+          source={require('../assets/images/ocean_hero_bg.jpg')}
+          style={styles.heroBackground}
+          imageStyle={styles.heroImage}
+          resizeMode="cover">
+          <View style={styles.heroContent}>
+            {/* Top Bar with brand icon, dual-title, slogan, language capsule & notification bell */}
+            <TopBar
+              onNotificationPress={() => navigation?.navigate('Alerts')}
+              unreadCount={activeAdvisories.length}
+            />
 
-        {/* Connectivity Status Banner */}
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: isStateOnline ? Colors.safe : Colors.textMuted },
-            ]}
-          />
-          <Text style={styles.statusText}>
-            {isStateOnline ? t('live_connected') : t('offline_cached')}
-          </Text>
-        </View>
+            {/* Location Selector Capsule Pill */}
+            <TouchableOpacity
+              style={styles.locationPill}
+              onPress={handleLocationPress}
+              activeOpacity={0.85}>
+              <Icon name="map-marker" size={16} color="#0A2540" />
+              <Text style={styles.locationText}>{currentCityName}</Text>
+              <Icon name="chevron-down" size={18} color="#0A2540" />
+            </TouchableOpacity>
 
-        {/* Greeting & Sunrise Hero Card */}
-        <GreetingBanner />
-
-        {/* Location Selector Pill */}
-        <LocationRow location={currentLocationLabel} onPress={handleLocationPress} />
-
-        {/* Current Conditions Weather Card */}
-        {weatherData ? (
-          <WeatherCard weather={weatherData} />
-        ) : (
-          <View style={styles.unavailableCard}>
-            <Icon name="cloud-off-outline" size={36} color={Colors.textMuted} />
-            <Text style={styles.unavailableTitle}>{t('offline_cached')}</Text>
-            <Text style={styles.unavailableSubtitle}>
-              {isStateLoading
-                ? t('connecting')
-                : 'Unable to reach backend. Real-time wind, wave, and ocean observations will appear when connected.'}
-            </Text>
+            {/* Personalized Greeting on Left */}
+            <View style={styles.greetingSection}>
+              <Text style={styles.greetingTitle}>
+                {t('greeting_namaskara')}{'\n'}{t('user_rameshanna')}
+              </Text>
+              <Text style={styles.greetingSubtitle}>
+                {t('check_sea_conditions')}
+              </Text>
+            </View>
           </View>
-        )}
+        </ImageBackground>
+
+        {/* Current Conditions Weather Card (Overlapping Hero) */}
+        <View style={styles.weatherCardWrapper}>
+          {weatherData ? (
+            <WeatherCard weather={weatherData} />
+          ) : (
+            <View style={styles.unavailableCard}>
+              <Icon name="cloud-off-outline" size={36} color="#94A3B8" />
+              <Text style={styles.unavailableTitle}>{t('offline_cached')}</Text>
+              <Text style={styles.unavailableSubtitle}>
+                {isStateLoading ? t('connecting') : 'Connecting to live GEE satellite telemetry...'}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Today's Fishing Advisory */}
         {activeAdvisories.length > 0 ? (
           <FishingAdvisory
             advisories={activeAdvisories}
-            onViewMap={() => {}}
+            onViewMap={() => navigation?.navigate('Map')}
+            onViewAll={() => navigation?.navigate('Alerts')}
           />
         ) : (
-          <View style={styles.advisoryUnavailableContainer}>
-            <View style={styles.advisoryHeader}>
-              <Text style={styles.sectionTitle}>{t('advisory_title')}</Text>
-            </View>
-            <View style={styles.advisoryUnavailableCard}>
-              <Icon name="information-outline" size={24} color={Colors.textMuted} />
-              <Text style={styles.advisoryUnavailableText}>
-                {isAdvLoading ? t('advisory_loading') : t('advisory_none_active')}
-              </Text>
-            </View>
+          <View style={styles.advisoryUnavailableCard}>
+            <Icon name="information-outline" size={24} color="#0D9488" />
+            <Text style={styles.advisoryUnavailableText}>
+              {isAdvLoading ? t('advisory_loading') : t('advisory_safe_notice')}
+            </Text>
           </View>
         )}
 
-        {/* Quick Actions (Fleet Tracking, Catch Logs, Distress Alerts, Equipment) */}
+        {/* Full-Width "View on Map" Royal Blue Button */}
+        <View style={styles.mapButtonContainer}>
+          <TouchableOpacity
+            style={styles.viewOnMapButton}
+            onPress={() => navigation?.navigate('Map')}
+            activeOpacity={0.85}>
+            <Icon name="map-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.viewOnMapText}>{t('view_on_map')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 2×2 Quick Actions Grid (Catch Logs, Distress Alerts, Fleet Tracking, Equipment) */}
         <QuickActions
           onActionPress={(actionId) => {
-            if (actionId === 'catch' || actionId === 'distress' || actionId === 'equipment' || actionId === 'fleet') {
-              setActiveModal(actionId);
-            }
+            setActiveModal(actionId);
           }}
         />
       </ScrollView>
@@ -180,47 +201,34 @@ const HomeScreen: React.FC = () => {
         states={states}
       />
 
-      {/* Quick Action Modals */}
+      {/* Catch Log Modal */}
       <CatchLogModal
         visible={activeModal === 'catch'}
         onClose={() => setActiveModal(null)}
-        currentPort={
-          selectedState
-            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
-            : 'Karwar'
-        }
+        currentPort={currentCityName}
       />
 
+      {/* Distress / SOS Modal */}
       <DistressModal
         visible={activeModal === 'distress'}
         onClose={() => setActiveModal(null)}
-        currentPort={
-          selectedState
-            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
-            : 'Karwar'
-        }
+        currentPort={currentCityName}
         latitude={selectedState?.latitude}
         longitude={selectedState?.longitude}
       />
 
+      {/* Equipment Checklist Modal */}
       <EquipmentChecklistModal
         visible={activeModal === 'equipment'}
         onClose={() => setActiveModal(null)}
-        currentPort={
-          selectedState
-            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
-            : 'Karwar'
-        }
+        currentPort={currentCityName}
       />
 
+      {/* Fleet Tracking Modal */}
       <FleetTrackingModal
         visible={activeModal === 'fleet'}
         onClose={() => setActiveModal(null)}
-        currentPort={
-          selectedState
-            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
-            : 'Karwar'
-        }
+        currentPort={currentCityName}
       />
     </View>
   );
@@ -229,90 +237,138 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primaryBackground,
+    backgroundColor: '#F4F7FB',
   },
   contentContainer: {
     paddingBottom: 24,
   },
-  statusRow: {
+  heroBackground: {
+    width: '100%',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  locationPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 10,
     gap: 6,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  locationText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0A2540',
   },
-  statusText: {
-    ...Typography.micro,
-    color: Colors.textSecondary,
-    fontSize: 9.5,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+  greetingSection: {
+    marginTop: 10,
+    maxWidth: '75%',
+  },
+  greetingTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    lineHeight: 28,
+    letterSpacing: -0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.55)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  greetingSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.95)',
+    marginTop: 3,
+    lineHeight: 17,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  weatherCardWrapper: {
+    marginTop: -16,
+  },
+  mapButtonContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  viewOnMapButton: {
+    backgroundColor: '#0284C7',
+    height: 48,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  viewOnMapText: {
+    color: '#FFFFFF',
+    fontSize: 15.5,
+    fontWeight: '800',
   },
   unavailableCard: {
-    marginHorizontal: Spacing.lg,
+    marginHorizontal: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
+    borderRadius: 22,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-    ...Shadows.card,
-    marginBottom: Spacing.sm,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
   },
   unavailableTitle: {
-    ...Typography.body,
+    fontSize: 15,
     fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.xs,
+    color: '#0A2540',
+    marginTop: 8,
+    marginBottom: 4,
   },
   unavailableSubtitle: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    fontSize: 12.5,
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
   },
-  advisoryUnavailableContainer: {
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-  },
-  advisoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.xs + 2,
-  },
-  sectionTitle: {
-    ...Typography.sectionTitle,
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
   advisoryUnavailableCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    marginHorizontal: 16,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: 10,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-    ...Shadows.card,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+    marginBottom: 12,
   },
   advisoryUnavailableText: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    fontSize: 13,
+    color: '#065F46',
     flex: 1,
     lineHeight: 18,
+    fontWeight: '600',
   },
 });
 
 export default HomeScreen;
-
-

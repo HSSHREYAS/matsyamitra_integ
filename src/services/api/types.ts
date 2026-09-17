@@ -10,6 +10,8 @@ export interface PfzStateResponse {
   source: string;
   age_hours: number;
   status: 'CURRENT' | 'STALE' | 'MISSING' | string;
+  sst?: number | null;
+  chlorophyll?: number | null;
 }
 
 export interface RiskStateResponse {

@@ -29,6 +29,8 @@ class PfzStateOut(BaseModel):
     source: str = Field(..., description="Data source identifier (e.g., 'gee')")
     age_hours: float = Field(..., description="Data age in hours from midnight UTC")
     status: str = Field(..., description="Freshness status: CURRENT, STALE, MISSING")
+    sst: Optional[float] = Field(None, description="GEE Sea Surface Temperature in °C")
+    chlorophyll: Optional[float] = Field(None, description="GEE Chlorophyll-a in mg/m³")
 
 
 class RiskStateOut(BaseModel):

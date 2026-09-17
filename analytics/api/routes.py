@@ -109,6 +109,8 @@ def get_all_current_states(session: Session = Depends(get_db_session)) -> list[C
                     source=s.pfz.source,
                     age_hours=s.pfz.age_hours,
                     status=s.pfz.status,
+                    sst=s.pfz.sst,
+                    chlorophyll=s.pfz.chlorophyll,
                 ) if s.pfz else None,
                 risk=RiskStateOut(
                     score=s.risk.score,
@@ -161,6 +163,8 @@ def get_current_state_by_location(
             source=state.pfz.source,
             age_hours=state.pfz.age_hours,
             status=state.pfz.status,
+            sst=state.pfz.sst,
+            chlorophyll=state.pfz.chlorophyll,
         ) if state.pfz else None,
         risk=RiskStateOut(
             score=state.risk.score,

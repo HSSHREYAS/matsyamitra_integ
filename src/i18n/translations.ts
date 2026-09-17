@@ -59,6 +59,18 @@ export interface Translations {
   advisory_loading: string;
   advisory_view_more: string;
   advisory_show_less: string;
+  today_advisory: string;
+  view_on_map: string;
+  greeting_namaskara: string;
+  user_rameshanna: string;
+  check_sea_conditions: string;
+  wind_label: string;
+  waves_label: string;
+  humidity_label: string;
+  sea_temp_label: string;
+  chlorophyll_label: string;
+  favorable_for_fishing: string;
+  pfz_near_honnavar: string;
 
   // Quick Action Cards
   qa_fleet: string;
@@ -222,6 +234,18 @@ export const translations: Record<Language, Translations> = {
     advisory_loading: 'Loading INCOIS advisories...',
     advisory_view_more: 'View More',
     advisory_show_less: 'Show Less',
+    today_advisory: "Today's Advisory",
+    view_on_map: 'View on Map',
+    greeting_namaskara: 'Namaskara',
+    user_rameshanna: 'Rameshanna!',
+    check_sea_conditions: 'Check sea conditions before you set sail today.',
+    wind_label: 'Wind',
+    waves_label: 'Waves',
+    humidity_label: 'Humidity',
+    sea_temp_label: 'Sea Temp',
+    chlorophyll_label: 'Chlorophyll',
+    favorable_for_fishing: 'Favorable for Fishing',
+    pfz_near_honnavar: 'Potential Fishing Zone near Honnavar',
 
     qa_fleet: 'Fleet Tracking',
     qa_catch: 'Catch Logs',
@@ -375,6 +399,18 @@ export const translations: Record<Language, Translations> = {
     advisory_loading: 'ಮಾಹಿತಿ ಪಡೆಯಲಾಗುತ್ತಿದೆ...',
     advisory_view_more: 'ಇನ್ನಷ್ಟು ಸಲಹೆಗಳು',
     advisory_show_less: 'ಕಡಿಮೆ ಮಾಡಿ',
+    today_advisory: 'ಇಂದಿನ ಸಲಹೆ',
+    view_on_map: 'ನಕ್ಷೆಯಲ್ಲಿ ವೀಕ್ಷಿಸಿ',
+    greeting_namaskara: 'ನಮಸ್ಕಾರ',
+    user_rameshanna: 'ರಮೇಶಣ್ಣ!',
+    check_sea_conditions: 'ಇಂದು ಸಮುದ್ರಕ್ಕಿಳಿಯುವ ಮುನ್ನ ಕಡಲಿನ ಸ್ಥಿತಿ ಪರಿಶೀಲಿಸಿ.',
+    wind_label: 'ಗಾಳಿ',
+    waves_label: 'ಅಲೆಗಳು',
+    humidity_label: 'ತೇವಾಂಶ',
+    sea_temp_label: 'ಕಡಲ ತಾಪಮಾನ',
+    chlorophyll_label: 'ಕ್ಲೋರೋಫಿಲ್',
+    favorable_for_fishing: 'ಮೀನುಗಾರಿಕೆಗೆ ಯೋಗ್ಯ ವಲಯ',
+    pfz_near_honnavar: 'ಹೊನ್ನಾವರ ಸಮೀಪ ಸಂಭಾವ್ಯ ಮೀನುಗಾರಿಕೆ ವಲಯ',
 
     qa_fleet: 'ದೋಣಿಗಳ ಮಾಹಿತಿ',
     qa_catch: 'ಮೀನಿನ ಲೆಕ್ಕ',

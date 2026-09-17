@@ -1,11 +1,10 @@
 /**
- * WeatherCard — Crisp white card with current conditions, temperature, metrics, and ocean telemetry
+ * WeatherCard — Crisp white card with 3+2 light-blue tiles for real-time GEE satellite & physical observations.
  */
 
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 import type { WeatherData } from '../../data/mockWeather';
 import { useLanguage } from '../../i18n';
 
@@ -21,32 +20,43 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
     if (c.includes('ROUGH') || c.includes('DANGER')) {
       return {
         label: t('unsafe_to_fish'),
-        bg: Colors.dangerBg,
-        text: Colors.dangerText,
+        bg: '#FEE2E2',
+        text: '#DC2626',
       };
     }
     if (c.includes('MODERATE') || c.includes('WIND') || c.includes('CAUTION')) {
       return {
         label: t('caution_to_fish'),
-        bg: Colors.cautionBg,
-        text: Colors.cautionText,
+        bg: '#FEF3C7',
+        text: '#D97706',
       };
     }
     return {
       label: t('safe_to_fish'),
-      bg: Colors.safeBg,
-      text: Colors.safeText,
+      bg: '#DCFCE7',
+      text: '#15803D',
     };
   }, [weather.condition, t]);
 
-  const windUnit = weather.windUnit === 'km/h' ? t('km_per_hour') : weather.windUnit;
-  const waveUnit = weather.waveUnit === 'm' ? ` ${t('meters')}` : weather.waveUnit;
+  const conditionDisplay = useMemo(() => {
+    const c = (weather.condition || '').toUpperCase();
+    if (c.includes('ROUGH') || c.includes('DANGER')) return t('cond_rough_sea');
+    if (c.includes('MODERATE')) return t('cond_moderate');
+    return t('cond_clear_calm');
+  }, [weather.condition, t]);
 
   return (
     <View style={styles.card}>
-      {/* Top Header: Current Conditions + Safety Pill */}
-      <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>{t('current_conditions')}</Text>
+      {/* Top Row: Current Temp + Condition on Left, Safety Pill on Right */}
+      <View style={styles.topRow}>
+        <View style={styles.tempLeftGroup}>
+          <Icon name="weather-sunny" size={42} color="#F59E0B" style={styles.sunIcon} />
+          <View style={styles.tempTextColumn}>
+            <Text style={styles.temperature}>{weather.temperature}°C</Text>
+            <Text style={styles.conditionText}>{conditionDisplay}</Text>
+          </View>
+        </View>
+
         <View style={[styles.safetyBadge, { backgroundColor: safetyBadge.bg }]}>
           <Text style={[styles.safetyBadgeText, { color: safetyBadge.text }]}>
             {safetyBadge.label}
@@ -54,209 +64,173 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
         </View>
       </View>
 
-      {/* Temperature & Weather Icon */}
-      <View style={styles.tempRow}>
-        <Icon
-          name="weather-sunny"
-          size={36}
-          color={Colors.sunYellow}
-          style={styles.weatherIcon}
-        />
-        <Text style={styles.temperature}>{weather.temperature}°C</Text>
-      </View>
-
-      {/* 3-Column Metrics Row */}
+      {/* Row 1: 3 Light-Blue Rounded Tiles (Wind, Waves, Humidity) */}
       <View style={styles.metricsRow}>
-        <View style={styles.metricItem}>
-          <View style={styles.metricHeader}>
-            <Icon name="weather-windy" size={13} color={Colors.oceanBlue} />
-            <Text style={styles.metricLabel}>{t('wind_speed')}</Text>
-          </View>
-          <Text style={styles.metricValue}>
-            {weather.windSpeed} {windUnit}
+        {/* Wind Tile */}
+        <View style={styles.metricTile}>
+          <Icon name="weather-windy" size={20} color="#0D9488" style={styles.tileIcon} />
+          <Text style={styles.tileLabel}>{t('wind_label')}</Text>
+          <Text style={styles.tileValue} numberOfLines={1}>
+            {weather.windSpeed} km/h
           </Text>
         </View>
 
-        <View style={styles.metricDivider} />
-
-        <View style={styles.metricItem}>
-          <View style={styles.metricHeader}>
-            <Icon name="wave" size={13} color={Colors.oceanBlue} />
-            <Text style={styles.metricLabel}>{t('wave_height')}</Text>
-          </View>
-          <Text style={styles.metricValue}>
-            {weather.waveHeight}{waveUnit}
+        {/* Waves Tile */}
+        <View style={styles.metricTile}>
+          <Icon name="wave" size={20} color="#0284C7" style={styles.tileIcon} />
+          <Text style={styles.tileLabel}>{t('waves_label')}</Text>
+          <Text style={styles.tileValue} numberOfLines={1}>
+            {weather.waveHeight} m
           </Text>
         </View>
 
-        <View style={styles.metricDivider} />
-
-        <View style={styles.metricItem}>
-          <View style={styles.metricHeader}>
-            <Icon name="water-percent" size={13} color={Colors.oceanBlue} />
-            <Text style={styles.metricLabel}>{t('humidity')}</Text>
-          </View>
-          <Text style={styles.metricValue}>{weather.humidity}%</Text>
+        {/* Humidity Tile */}
+        <View style={styles.metricTile}>
+          <Icon name="water-percent" size={20} color="#0284C7" style={styles.tileIcon} />
+          <Text style={styles.tileLabel}>{t('humidity_label')}</Text>
+          <Text style={styles.tileValue} numberOfLines={1}>
+            {weather.humidity}%
+          </Text>
         </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Ocean Data Row (Sea Temp & Chlorophyll) */}
+      {/* Row 2: 2 Wider Light-Blue Rounded Tiles (Sea Temp & Chlorophyll from GEE) */}
       <View style={styles.oceanRow}>
-        <View style={styles.oceanChip}>
-          <View style={styles.oceanChipHeader}>
-            <Icon name="thermometer" size={13} color={Colors.primaryAccent} />
-            <Text style={styles.oceanLabel}>{t('sea_temp')}</Text>
+        {/* Sea Temp Tile */}
+        <View style={styles.oceanTile}>
+          <Icon name="thermometer" size={22} color="#0D9488" />
+          <View style={styles.oceanTileTexts}>
+            <Text style={styles.oceanTileLabel}>{t('sea_temp_label')}</Text>
+            <Text style={styles.oceanTileValue}>{weather.seaTemp}°C</Text>
           </View>
-          <Text style={styles.oceanValue}>{weather.seaTemp}°C</Text>
         </View>
 
-        <View style={styles.oceanChip}>
-          <View style={styles.oceanChipHeader}>
-            <Icon name="leaf" size={13} color={Colors.primaryAccent} />
-            <Text style={styles.oceanLabel}>{t('chlorophyll')}</Text>
+        {/* Chlorophyll Tile */}
+        <View style={styles.oceanTile}>
+          <Icon name="arrow-down-circle" size={22} color="#0D9488" />
+          <View style={styles.oceanTileTexts}>
+            <Text style={styles.oceanTileLabel}>{t('chlorophyll_label')}</Text>
+            <Text style={styles.oceanTileValue} numberOfLines={1}>
+              {weather.chlorophyll} {weather.chlorophyllUnit || 'mg/m³'}
+            </Text>
           </View>
-          <Text style={styles.oceanValue}>
-            {weather.chlorophyll} {weather.chlorophyllUnit}
-          </Text>
         </View>
       </View>
-
-      {/* Updated Timestamp */}
-      <Text style={styles.updated}>{weather.updatedAgo || t('updated_ago')}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: Spacing.lg,
+    marginHorizontal: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: 22,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-    padding: Spacing.md,
-    ...Shadows.card,
-    marginBottom: Spacing.sm + 2,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0A2540',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 10,
   },
-  headerRow: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  headerTitle: {
-    ...Typography.body,
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  safetyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.pill,
-  },
-  safetyBadgeText: {
-    ...Typography.chip,
-    fontWeight: '700',
-    fontSize: 11,
-  },
-  tempRow: {
+  tempLeftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: 10,
   },
-  weatherIcon: {
+  sunIcon: {
     marginRight: 2,
   },
+  tempTextColumn: {
+    justifyContent: 'center',
+  },
   temperature: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0A2540',
+    lineHeight: 32,
+    letterSpacing: -0.5,
+  },
+  conditionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  safetyBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  safetyBadgeText: {
+    fontSize: 13.5,
+    fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
+    gap: 8,
+    marginBottom: 8,
   },
-  metricItem: {
+  metricTile: {
     flex: 1,
-    alignItems: 'flex-start',
-  },
-  metricHeader: {
-    flexDirection: 'row',
+    backgroundColor: '#F0F9FF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    gap: 3,
+  },
+  tileIcon: {
+    marginBottom: 3,
+  },
+  tileLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748B',
     marginBottom: 2,
   },
-  metricLabel: {
-    ...Typography.micro,
-    color: Colors.textSecondary,
-    fontSize: 9.5,
-    fontWeight: '600',
-  },
-  metricValue: {
-    ...Typography.body,
-    color: Colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 12.5,
-    marginLeft: 1,
-  },
-  metricDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.borderLight,
-    marginHorizontal: 6,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.borderLight,
-    marginVertical: Spacing.sm - 2,
+  tileValue: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0A2540',
   },
   oceanRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: 4,
+    gap: 8,
   },
-  oceanChip: {
+  oceanTile: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  oceanChipHeader: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 10,
   },
-  oceanLabel: {
-    ...Typography.micro,
-    color: Colors.textSecondary,
-    fontSize: 10,
-    fontWeight: '600',
+  oceanTileTexts: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  oceanValue: {
-    ...Typography.body,
-    color: Colors.primaryAccentDark,
+  oceanTileLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748B',
+    marginBottom: 1,
+  },
+  oceanTileValue: {
+    fontSize: 14,
     fontWeight: '800',
-    fontSize: 12.5,
-  },
-  updated: {
-    ...Typography.micro,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    marginTop: 6,
-    fontSize: 9.5,
+    color: '#0A2540',
   },
 });
 

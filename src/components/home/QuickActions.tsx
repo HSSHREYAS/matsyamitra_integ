@@ -1,67 +1,72 @@
 /**
- * QuickActions — 2×2 grid of quick action buttons
+ * QuickActions — 2×2 grid of colored module tiles (Catch Logs, Distress Alerts, Fleet Tracking, Equipment).
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
-import { useLanguage, type TranslationKey } from '../../i18n';
-
-interface QuickAction {
-  id: string;
-  icon: string;
-  label?: string;
-  labelKey?: TranslationKey;
-  onPress?: () => void;
-}
-
-const defaultActions: QuickAction[] = [
-  { id: 'fleet', icon: 'sail-boat', labelKey: 'qa_fleet', label: 'Fleet Tracking' },
-  { id: 'catch', icon: 'fish', labelKey: 'qa_catch', label: 'Catch Logs' },
-  { id: 'distress', icon: 'alert-octagon', labelKey: 'qa_distress', label: 'Distress Alerts' },
-  { id: 'equipment', icon: 'wrench', labelKey: 'qa_equipment', label: 'Equipment' },
-];
+import { useLanguage } from '../../i18n';
 
 interface QuickActionsProps {
-  actions?: QuickAction[];
-  onActionPress?: (actionId: string) => void;
+  onActionPress?: (actionId: 'catch' | 'distress' | 'fleet' | 'equipment') => void;
 }
 
-const QuickActions: React.FC<QuickActionsProps> = ({
-  actions = defaultActions,
-  onActionPress,
-}) => {
+const QuickActions: React.FC<QuickActionsProps> = ({ onActionPress }) => {
   const { t } = useLanguage();
+
+  const handlePress = (id: 'catch' | 'distress' | 'fleet' | 'equipment') => {
+    if (onActionPress) {
+      onActionPress(id);
+    }
+  };
 
   return (
     <View style={styles.container}>
+      {/* 2×2 Grid */}
       <View style={styles.grid}>
-        {actions.map((action) => {
-          const displayLabel = action.labelKey ? t(action.labelKey) : action.label;
-          return (
-            <TouchableOpacity
-              key={action.id}
-              style={styles.card}
-              onPress={() => {
-                if (action.onPress) {
-                  action.onPress();
-                } else if (onActionPress) {
-                  onActionPress(action.id);
-                }
-              }}
-              activeOpacity={0.7}>
-              <View style={styles.iconContainer}>
-                <Icon
-                  name={action.icon}
-                  size={20}
-                  color={Colors.primaryAccent}
-                />
-              </View>
-              <Text style={styles.label} numberOfLines={1}>{displayLabel}</Text>
-            </TouchableOpacity>
-          );
-        })}
+        {/* Top-Left: Catch Logs (Soft Mint) */}
+        <TouchableOpacity
+          style={[styles.tile, styles.catchTile]}
+          onPress={() => handlePress('catch')}
+          activeOpacity={0.75}>
+          <Icon name="fish" size={22} color="#0D9488" />
+          <Text style={styles.tileLabel} numberOfLines={1}>
+            {t('qa_catch')}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Top-Right: Distress Alerts (Soft Coral) */}
+        <TouchableOpacity
+          style={[styles.tile, styles.distressTile]}
+          onPress={() => handlePress('distress')}
+          activeOpacity={0.75}>
+          <Icon name="alert" size={22} color="#DC2626" />
+          <Text style={styles.tileLabel} numberOfLines={1}>
+            {t('qa_distress')}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Bottom-Left: Fleet Tracking (Soft Sky Blue) */}
+        <TouchableOpacity
+          style={[styles.tile, styles.fleetTile]}
+          onPress={() => handlePress('fleet')}
+          activeOpacity={0.75}>
+          <Icon name="sail-boat" size={22} color="#0284C7" />
+          <Text style={styles.tileLabel} numberOfLines={1}>
+            {t('qa_fleet')}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Bottom-Right: Equipment (Soft Ice Blue) */}
+        <TouchableOpacity
+          style={[styles.tile, styles.equipmentTile]}
+          onPress={() => handlePress('equipment')}
+          activeOpacity={0.75}>
+          <Icon name="wrench" size={20} color="#2563EB" />
+          <Text style={styles.tileLabel} numberOfLines={1}>
+            {t('qa_equipment')}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -69,45 +74,47 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.md,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
     justifyContent: 'space-between',
+    gap: 10,
   },
-  card: {
+  tile: {
     width: '48.5%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    height: 50,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 10,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-    paddingVertical: Spacing.sm + 4,
-    paddingHorizontal: Spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.card,
   },
-  iconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primaryAccentLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 5,
+  catchTile: {
+    backgroundColor: '#E8F8F0',
+    borderColor: 'rgba(13, 148, 136, 0.15)',
   },
-  label: {
-    ...Typography.label,
-    fontSize: 12,
-    color: Colors.textPrimary,
+  distressTile: {
+    backgroundColor: '#FEE8E8',
+    borderColor: 'rgba(220, 38, 38, 0.15)',
+  },
+  fleetTile: {
+    backgroundColor: '#EFF6FF',
+    borderColor: 'rgba(2, 132, 199, 0.15)',
+  },
+  equipmentTile: {
+    backgroundColor: '#EFF6FF',
+    borderColor: 'rgba(37, 99, 235, 0.15)',
+  },
+  tileLabel: {
+    fontSize: 13.5,
     fontWeight: '700',
-    textAlign: 'center',
+    color: '#0A2540',
+    flex: 1,
   },
 });
 
 export default QuickActions;
-

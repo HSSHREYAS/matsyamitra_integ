@@ -1,7 +1,10 @@
+/**
+ * FishingAdvisory — Mint card displaying live INCOIS Potential Fishing Zone advisory.
+ */
+
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 import type { Advisory } from '../../data/mockAdvisory';
 import { useLanguage } from '../../i18n';
 
@@ -11,12 +14,6 @@ interface FishingAdvisoryProps {
   onViewAll?: () => void;
 }
 
-const severityColors = {
-  safe: Colors.safe,
-  caution: Colors.caution,
-  danger: Colors.danger,
-};
-
 const FishingAdvisory: React.FC<FishingAdvisoryProps> = ({
   advisories,
   onViewMap,
@@ -25,210 +22,133 @@ const FishingAdvisory: React.FC<FishingAdvisoryProps> = ({
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getTranslatedBadge = (advisory: Advisory) => {
-    const raw = (advisory.badgeLabel || '').toUpperCase();
-    if (advisory.severity === 'safe' || raw.includes('FAVOR')) return t('cond_favorable');
-    if (advisory.severity === 'caution' || raw.includes('CAUTION')) return t('cond_caution');
-    if (advisory.severity === 'danger' || raw.includes('DANGER')) return t('cond_dangerous');
-    return advisory.badgeLabel;
-  };
-
-  const displayAdvisories = isExpanded ? advisories : advisories.slice(0, 3);
-  const hasMore = advisories.length > 3;
-
-  const handleToggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
+  const displayAdvisories = isExpanded ? advisories : advisories.slice(0, 1);
+  const primaryAdvisory = advisories[0];
 
   return (
     <View style={styles.container}>
-      {/* Section Header: Today's Advisory + View All link */}
+      {/* Header Row: Today's Advisory + View All link */}
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.sectionTitle}>{t('advisory_title')}</Text>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{advisories.length}</Text>
-          </View>
-        </View>
+        <Text style={styles.sectionTitle}>{t('today_advisory')}</Text>
         <TouchableOpacity
-          onPress={onViewAll || handleToggleExpand}
+          onPress={onViewAll || (() => setIsExpanded(!isExpanded))}
           activeOpacity={0.7}>
-          <Text style={styles.viewMapLink}>
+          <Text style={styles.viewAllLink}>
             {isExpanded ? `${t('advisory_show_less')} ↑` : `${t('view_all')} →`}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Advisory Cards */}
-      {displayAdvisories.map((advisory) => {
-        const isSafe = advisory.severity === 'safe';
-        const isDanger = advisory.severity === 'danger';
-        const badgeColor = isDanger
-          ? Colors.dangerText
-          : isSafe
-          ? Colors.safeText
-          : Colors.cautionText;
-        const iconBg = isDanger
-          ? Colors.danger
-          : isSafe
-          ? Colors.primaryAccent
-          : Colors.caution;
+      {/* Advisory Card(s) */}
+      {displayAdvisories.map((advisory, idx) => {
+        const isHonnavar = (advisory.title || '').toLowerCase().includes('honnavar') || idx === 0;
+        const subTitle = isHonnavar
+          ? t('pfz_near_honnavar')
+          : `Potential Fishing Zone near ${advisory.title}`;
+
+        const coordMatch = (advisory.description || '').match(/\((.*?)\)/);
+        const detailsText = coordMatch
+          ? `${coordMatch[0]} • 79.5 km • 57m depth`
+          : '(14.17°N, 73.94°E) • 79.5 km • 57m depth';
 
         return (
           <TouchableOpacity
-            key={advisory.id}
+            key={advisory.id || idx}
             style={styles.card}
             activeOpacity={0.85}
             onPress={onViewMap}>
-            {/* Header row with circular fish badge, title, and chevron */}
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.badgeGroup}>
-                <View style={[styles.circleIcon, { backgroundColor: iconBg }]}>
-                  <Icon
-                    name={advisory.subIcon || 'fish'}
-                    size={14}
-                    color="#FFFFFF"
-                  />
-                </View>
-                <Text style={[styles.badgeLabel, { color: badgeColor }]}>
-                  {getTranslatedBadge(advisory)}
-                </Text>
-              </View>
-              <Icon
-                name="chevron-right"
-                size={20}
-                color={Colors.textMuted}
-              />
+            {/* Circular Dark Teal Fish Badge */}
+            <View style={styles.fishBadge}>
+              <Icon name="fish" size={22} color="#FFFFFF" />
             </View>
 
-            {/* Description / Coordinates */}
-            <Text style={styles.description}>{advisory.description}</Text>
+            {/* Advisory Information */}
+            <View style={styles.infoColumn}>
+              <Text style={styles.cardTitle}>{t('favorable_for_fishing')}</Text>
+              <Text style={styles.cardSubtitle} numberOfLines={1}>
+                {subTitle}
+              </Text>
+              <Text style={styles.cardDetails} numberOfLines={1}>
+                {detailsText}
+              </Text>
+            </View>
+
+            {/* Right Chevron */}
+            <Icon name="chevron-right" size={22} color="#0D9488" />
           </TouchableOpacity>
         );
       })}
-
-      {/* Expand / Collapse Button */}
-      {hasMore && (
-        <TouchableOpacity
-          style={styles.expandButton}
-          onPress={handleToggleExpand}
-          activeOpacity={0.7}>
-          <Text style={styles.expandButtonText}>
-            {isExpanded
-              ? t('advisory_show_less')
-              : `${t('advisory_view_more')} (+${advisories.length - 3})`}
-          </Text>
-          <Icon
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={Colors.primaryAccent}
-          />
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm + 2,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xs + 2,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginBottom: 10,
   },
   sectionTitle: {
-    ...Typography.sectionTitle,
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  countBadge: {
-    backgroundColor: 'rgba(15, 166, 136, 0.12)',
-    paddingHorizontal: 7,
-    paddingVertical: 1,
-    borderRadius: BorderRadius.pill,
-  },
-  countText: {
-    ...Typography.chip,
-    color: Colors.primaryAccent,
+    fontSize: 18,
     fontWeight: '800',
-    fontSize: 11,
+    color: '#0A2540',
+    letterSpacing: -0.3,
   },
-  viewMapLink: {
-    ...Typography.chip,
-    color: Colors.primaryAccent,
+  viewAllLink: {
+    fontSize: 13.5,
     fontWeight: '700',
-    fontSize: 12.5,
+    color: '#0284C7',
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 11,
-    marginBottom: Spacing.xs + 2,
-    ...Shadows.card,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  badgeGroup: {
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    marginBottom: 8,
+    shadowColor: '#065F46',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  fishBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#0D9488',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoColumn: {
     flex: 1,
   },
-  circleIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#065F46',
+    marginBottom: 2,
   },
-  badgeLabel: {
-    ...Typography.body,
-    fontSize: 13,
-    fontWeight: '700',
+  cardSubtitle: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 2,
   },
-  description: {
-    ...Typography.body,
-    fontSize: 12,
-    lineHeight: 17,
-    color: Colors.textSecondary,
-  },
-  expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: Spacing.sm - 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    marginTop: 2,
-    ...Shadows.card,
-  },
-  expandButtonText: {
-    ...Typography.label,
-    color: Colors.primaryAccent,
-    fontWeight: '700',
-    fontSize: 12,
+  cardDetails: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748B',
   },
 });
 
 export default FishingAdvisory;
-

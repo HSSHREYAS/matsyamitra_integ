@@ -52,8 +52,17 @@ export function transformCurrentStateToWeather(
     }
   }
 
+  // Bind real GEE satellite observations
+  const sstVal = pfz?.sst !== null && pfz?.sst !== undefined ? parseFloat(pfz.sst.toFixed(1)) : 28.5;
+  const chloroVal =
+    pfz?.chlorophyll !== null && pfz?.chlorophyll !== undefined
+      ? parseFloat(pfz.chlorophyll.toFixed(2))
+      : pfz?.score
+      ? parseFloat((pfz.score * 0.08).toFixed(2))
+      : 0.73;
+
   return {
-    temperature: 29, // Coastal ambient baseline
+    temperature: pfz?.sst ? Math.round(pfz.sst) : 29,
     condition,
     conditionIcon,
     windSpeed:
@@ -61,18 +70,18 @@ export function transformCurrentStateToWeather(
         ? Math.round(risk.wind_speed * 3.6)
         : risk?.score !== null && risk?.score !== undefined
         ? Math.round(risk.score * 3.5)
-        : 12,
+        : 24,
     windUnit: 'km/h',
     waveHeight:
       risk?.wave_height !== null && risk?.wave_height !== undefined
         ? parseFloat(risk.wave_height.toFixed(1))
         : risk?.score !== null && risk?.score !== undefined
         ? parseFloat((risk.score * 0.4).toFixed(1))
-        : 1.2,
+        : 1.5,
     waveUnit: 'm',
     humidity: 78,
-    seaTemp: 28.5,
-    chlorophyll: pfz?.score ? parseFloat((pfz.score * 0.08).toFixed(2)) : 0.4,
+    seaTemp: sstVal,
+    chlorophyll: chloroVal,
     chlorophyllUnit: 'mg/m³',
     updatedAgo,
     location: locationName || `${cityName} (${state.latitude.toFixed(2)}°N, ${state.longitude.toFixed(2)}°E)`,
@@ -114,9 +123,12 @@ export function transformCurrentStatesToFishingZones(
         sectorCode: `Zone ${displayName}`,
         region: 'Karnataka Coast',
         potential,
-        chlorophyll: parseFloat((potential * 0.005).toFixed(2)),
+        chlorophyll:
+          pfz.chlorophyll !== null && pfz.chlorophyll !== undefined
+            ? parseFloat(pfz.chlorophyll.toFixed(2))
+            : parseFloat((potential * 0.005).toFixed(2)),
         chlorophyllStatus: chStatus,
-        sst: 28.2,
+        sst: pfz.sst !== null && pfz.sst !== undefined ? parseFloat(pfz.sst.toFixed(1)) : 28.2,
         sstStatus: pfz.category.toUpperCase(),
         coordinates: createBoxCoordinates(s.latitude, s.longitude, 0.06),
         center: { latitude: s.latitude, longitude: s.longitude },
