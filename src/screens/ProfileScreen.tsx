@@ -15,11 +15,12 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
+import { useLanguage } from '../i18n';
 
 const ProfileScreen: React.FC = () => {
+  const { language, setLanguage, t } = useLanguage();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [weatherAlerts, setWeatherAlerts] = useState(true);
-  const [language, setLanguage] = useState('en');
 
   const profileSections = [
     {
@@ -108,6 +109,40 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
       ))}
+
+      {/* Language Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          {language === 'kn' ? 'ಭಾಷೆ (Language)' : 'Language'}
+        </Text>
+        <View style={styles.sectionCard}>
+          <TouchableOpacity
+            style={[styles.toggleItem, { paddingVertical: Spacing.md }]}
+            onPress={() => setLanguage('en')}
+            activeOpacity={0.7}>
+            <View style={styles.sectionItemLeft}>
+              <Icon name="translate" size={20} color={Colors.primaryAccent} />
+              <Text style={styles.itemLabel}>English</Text>
+            </View>
+            {language === 'en' && (
+              <Icon name="check-circle" size={22} color={Colors.primaryAccent} />
+            )}
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={[styles.toggleItem, { paddingVertical: Spacing.md }]}
+            onPress={() => setLanguage('kn')}
+            activeOpacity={0.7}>
+            <View style={styles.sectionItemLeft}>
+              <Icon name="translate" size={20} color={Colors.primaryAccent} />
+              <Text style={styles.itemLabel}>ಕನ್ನಡ (Coastal Kannada)</Text>
+            </View>
+            {language === 'kn' && (
+              <Icon name="check-circle" size={22} color={Colors.primaryAccent} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Notification Settings */}
       <View style={styles.section}>

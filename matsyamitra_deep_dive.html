@@ -1,0 +1,308 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary)}
+.header{background:linear-gradient(90deg,#0F6E56,#185FA5);padding:1rem 1.25rem;border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0}
+.header h1{color:#fff;font-size:15px;font-weight:500;margin-bottom:3px}
+.header p{color:rgba(255,255,255,0.8);font-size:11px}
+.tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);overflow-x:auto;background:var(--color-background-secondary)}
+.tab{font-size:12px;padding:8px 14px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;white-space:nowrap;background:transparent;border-top:none;border-left:none;border-right:none;transition:.15s}
+.tab.active{color:var(--color-text-primary);border-bottom-color:#0F6E56;font-weight:500;background:var(--color-background-primary)}
+.panel{display:none;padding:1rem 1.25rem}
+.panel.active{display:block}
+.sl{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.85rem 1rem;margin-bottom:8px}
+.card-t{font-size:13px;font-weight:500;margin-bottom:5px}
+.card-b{font-size:12px;color:var(--color-text-secondary);line-height:1.7}
+.q{border-left:3px solid #1D9E75;padding:8px 12px;margin-bottom:8px;border-radius:0 6px 6px 0;background:var(--color-background-secondary)}
+.q.hard{border-left-color:#E24B4A}
+.q.med{border-left-color:#BA7517}
+.q.easy{border-left-color:#1D9E75}
+.qt{font-size:12px;font-weight:600;margin-bottom:5px;color:var(--color-text-primary)}
+.qa{font-size:12px;color:var(--color-text-secondary);line-height:1.7}
+.qa strong{color:var(--color-text-primary)}
+.chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin:1px}
+.c-r{background:#FCEBEB;color:#A32D2D}
+.c-a{background:#FAEEDA;color:#854F0B}
+.c-b{background:#E6F1FB;color:#185FA5}
+.c-g{background:#EAF3DE;color:#3B6D11}
+.c-p{background:#EEEDFE;color:#534AB7}
+.c-gray{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+.warn{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:var(--border-radius-md);padding:8px 12px;font-size:12px;color:#A32D2D;margin-bottom:10px;line-height:1.6}
+.ok{background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:var(--border-radius-md);padding:8px 12px;font-size:12px;color:#3B6D11;margin-bottom:10px;line-height:1.6}
+.info{background:#E6F1FB;border:0.5px solid #A8CCEF;border-radius:var(--border-radius-md);padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;line-height:1.6}
+.diff-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;float:right}
+.diff-hard{background:#FCEBEB;color:#A32D2D}
+.diff-med{background:#FAEEDA;color:#854F0B}
+.diff-easy{background:#EAF3DE;color:#3B6D11}
+.arch-box{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px;margin:8px 0;text-align:center;font-size:12px;background:var(--color-background-secondary)}
+.arch-layer{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:8px 12px;margin:4px 0;font-size:12px}
+.arch-arrow{color:var(--color-text-secondary);font-size:14px;margin:2px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:500px){.two{grid-template-columns:1fr}}
+.green-bar{background:linear-gradient(90deg,#E1F5EE,transparent);border-left:3px solid #1D9E75;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:8px;font-size:13px;line-height:2;color:var(--color-text-primary)}
+</style>
+
+<div class="header">
+  <h1>🐟 MatsyaMitra+ — Complete L3 Interview Prep</h1>
+  <p>Intelligent Fishing Zone Recommendation System · Flutter · Firebase · Google Maps API</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="sw('overview')">Overview & Architecture</button>
+  <button class="tab" onclick="sw('qa')">All Q&A</button>
+  <button class="tab" onclick="sw('hard')">Hard L3 questions</button>
+  <button class="tab" onclick="sw('pitch')">60-sec pitch</button>
+  <button class="tab" onclick="sw('compare')">vs other projects</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="tab-overview" class="panel active">
+  <div class="info">MatsyaMitra is actually your MOST socially impactful project — it helps fishing communities across coastal Karnataka. This resonates deeply with Infosys's "Navigate your next" and social impact ethos. Lead with the social impact angle.</div>
+
+  <div class="sl">What MatsyaMitra does — understand this deeply</div>
+  <div class="card">
+    <div class="card-t">The problem it solves</div>
+    <div class="card-b">Fishermen in coastal Karnataka (Karavali region) go out to sea without knowing where fish are concentrated. They waste fuel, time, and risk their safety going to empty zones. No data-driven tool exists for small-scale fishermen in regional languages.</div>
+  </div>
+  <div class="card">
+    <div class="card-t">What MatsyaMitra does</div>
+    <div class="card-b">
+      <span class="chip c-g">Multilingual Android app</span><span class="chip c-g">Fishing zone recommendations</span><span class="chip c-g">Ocean + satellite data</span><span class="chip c-g">Crowd-aware system</span><span class="chip c-g">Real-time alerts</span><br><br>
+      1. Uses ocean data (sea surface temperature, chlorophyll concentration from satellite APIs) to predict where fish are likely to be concentrated<br>
+      2. Crowd-aware recommendation — if too many boats go to one zone, the app recommends alternative zones to prevent overcrowding and depletion<br>
+      3. Real-time alerts — weather warnings, safety alerts, zone updates<br>
+      4. Multilingual — Kannada + English to serve actual fishermen who may not read English<br>
+      5. Interactive maps using Google Maps API for visual zone display
+    </div>
+  </div>
+
+  <div class="sl" style="margin-top:.5rem">System Architecture</div>
+  <div class="arch-box">
+    <div class="arch-layer" style="border-color:#1D9E75;background:#E1F5EE">
+      <strong style="color:#0F6E56">PRESENTATION LAYER</strong><br>
+      Flutter Android App — Maps, zone recommendations, multilingual UI, alerts<br>
+      <span class="chip c-g">Flutter (Dart)</span><span class="chip c-g">Google Maps API</span><span class="chip c-g">Firebase SDK</span>
+    </div>
+    <div class="arch-arrow">⬇️ API calls + real-time listeners</div>
+    <div class="arch-layer" style="border-color:#185FA5;background:#E6F1FB">
+      <strong style="color:#185FA5">APPLICATION LAYER</strong><br>
+      Recommendation engine — processes satellite data + crowd density → outputs optimal zones<br>
+      <span class="chip c-b">Zone recommendation logic</span><span class="chip c-b">Crowd density algorithm</span><span class="chip c-b">Weather alert processing</span>
+    </div>
+    <div class="arch-arrow">⬇️ Data reads + real-time updates</div>
+    <div class="arch-layer" style="border-color:#BA7517;background:#FAEEDA">
+      <strong style="color:#854F0B">DATA LAYER</strong><br>
+      Firebase (real-time boat locations, alerts) + External satellite/ocean data APIs<br>
+      <span class="chip c-a">Firebase Realtime DB</span><span class="chip c-a">Ocean satellite data APIs</span><span class="chip c-a">Weather APIs</span>
+    </div>
+  </div>
+
+  <div class="sl" style="margin-top:.5rem">Key technical concepts to know</div>
+  <div class="two">
+    <div class="card">
+      <div class="card-t">Why Flutter?</div>
+      <div class="card-b">Single codebase for Android (and potentially iOS). Dart compiles to native ARM code — near-native performance. Rich widget library for maps and multilingual UI. Fishermen use Android — Flutter Android was the right choice.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Why Firebase Realtime DB?</div>
+      <div class="card-b">Real-time boat location tracking needs instant sync across devices — Firebase Realtime DB pushes updates to all connected clients instantly. If Boat A reports a good zone, Boat B sees it in milliseconds. SQL databases don't do this natively.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Crowd-aware algorithm</div>
+      <div class="card-b">Count active boats in each zone using real-time Firebase data. If zone A has more than threshold T boats, reduce its recommendation score. Recommend zone B instead. Prevents overfishing and overcrowding — like traffic routing for the sea.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Ocean data for predictions</div>
+      <div class="card-b">Fish concentrate where sea surface temperature (SST) is optimal for their species and chlorophyll is high (indicates plankton = food). Satellite APIs (NOAA, INCOIS) provide this data. We map it to GPS zones and score each zone.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q&A -->
+<div id="tab-qa" class="panel">
+  <div class="sl">All interview questions for MatsyaMitra</div>
+
+  <div class="q easy">
+    <div class="qt">Describe MatsyaMitra in 60 seconds. <span class="diff-badge diff-easy">Warm-up</span></div>
+    <div class="qa">"MatsyaMitra is a multilingual Android app I'm building for fishing zone recommendations targeting the Karavali coastal fishing community of Karnataka. It uses ocean satellite data — sea surface temperature and chlorophyll concentration — to predict optimal fishing zones. A crowd-aware recommendation system tracks active boats per zone using Firebase Realtime Database and redirects fishermen to less crowded zones, preventing overfishing. The app provides real-time weather and safety alerts, and interactive maps using Google Maps API. It's multilingual — Kannada and English — to actually serve the fishermen who will use it. We're currently focused on Karnataka's coast with plans to scale to all of India."</div>
+  </div>
+
+  <div class="q easy">
+    <div class="qt">Why Flutter? Why not native Android or React Native? <span class="diff-badge diff-easy">Easy</span></div>
+    <div class="qa">
+      <strong>vs Native Android (Java/Kotlin):</strong> Native gives best performance but requires maintaining separate iOS codebase if we ever expand. Flutter gives near-native performance with a single codebase.<br><br>
+      <strong>vs React Native:</strong> React Native uses a JavaScript bridge to communicate with native components — introduces latency. Flutter compiles directly to native ARM code — faster, especially for map rendering which is performance-intensive.<br><br>
+      <strong>Why Flutter specifically:</strong> Rich widget library, excellent Google Maps integration, strong multilingual/localization support for Kannada, active community. For a fishing community app on Android, Flutter was the most productive and performant choice.
+    </div>
+  </div>
+
+  <div class="q med">
+    <div class="qt">Why Firebase Realtime Database and not Firestore or MySQL? <span class="diff-badge diff-med">Medium</span></div>
+    <div class="qa">
+      <strong>Firebase Realtime DB vs Firestore:</strong> Realtime DB is optimized for low-latency sync of simple data — like GPS coordinates updating every few seconds. Firestore is better for complex queries on structured data. For live boat tracking, Realtime DB's websocket-based push model is ideal — updates reach all connected clients in milliseconds without polling.<br><br>
+      <strong>vs MySQL:</strong> MySQL is a relational database — requires polling (client asks "any updates?" repeatedly) which is inefficient and slow for real-time location tracking. Firebase pushes updates to clients automatically.<br><br>
+      <strong>Key insight:</strong> "For the crowd-aware system to work, we need to know in real-time how many boats are in each zone. Firebase Realtime DB gives us this instantly — when a boat moves, all other app instances update automatically."
+    </div>
+  </div>
+
+  <div class="q med">
+    <div class="qt">Explain the crowd-aware recommendation algorithm in detail. <span class="diff-badge diff-med">Medium — core feature</span></div>
+    <div class="qa">
+      <strong>Step 1 — Zone definition:</strong> The sea is divided into GPS grid zones (e.g. 1km × 1km cells).<br><br>
+      <strong>Step 2 — Real-time boat tracking:</strong> Each active app user shares their GPS location. Firebase stores this — we count how many boats are in each zone in real-time.<br><br>
+      <strong>Step 3 — Base zone scoring:</strong> Each zone gets a base score from satellite data — higher sea surface temperature suitability + higher chlorophyll = higher base score.<br><br>
+      <strong>Step 4 — Crowd penalty:</strong> If zone has more than threshold T boats (say 10), we apply a penalty to its score. The more boats, the higher the penalty.<br><br>
+      <strong>Step 5 — Final recommendation:</strong> App shows top 3 zones by final score = base score minus crowd penalty.<br><br>
+      <strong>Real-world analogy:</strong> "It's exactly like Google Maps routing — it doesn't just show the shortest path, it avoids congested roads. MatsyaMitra doesn't just show where fish are, it avoids overcrowded zones."
+    </div>
+  </div>
+
+  <div class="q med">
+    <div class="qt">What ocean data do you use and where does it come from? <span class="diff-badge diff-med">Medium</span></div>
+    <div class="qa">
+      <strong>Sea Surface Temperature (SST):</strong> Different fish species thrive in specific temperature ranges. For example, Indian mackerel prefer 26–29°C. SST data from NOAA (National Oceanic and Atmospheric Administration) satellites or INCOIS (Indian National Centre for Ocean Information Services) — India's own ocean data platform.<br><br>
+      <strong>Chlorophyll concentration:</strong> High chlorophyll = high phytoplankton = high zooplankton = more fish. This data is also available from satellite remote sensing via NOAA or NASA's MODIS satellite.<br><br>
+      <strong>How we use it:</strong> We fetch this data via APIs, map it to our GPS grid zones, and compute a fish probability score per zone. Combined with crowd data — final recommendation is generated.<br><br>
+      <strong>Honest note for interview:</strong> "We're currently using publicly available datasets from INCOIS for our prototype. In production, we'd integrate real-time satellite API feeds with daily updates."
+    </div>
+  </div>
+
+  <div class="q hard">
+    <div class="qt">What are the challenges of building for fishermen as users? How did you address them? <span class="diff-badge diff-hard">L3 — UX thinking</span></div>
+    <div class="qa">
+      <strong>Challenge 1 — Literacy and language:</strong> Many fishermen may not be comfortable reading English or even Kannada text fluently.<br>
+      Solution: Multilingual support (Kannada first), large UI elements, map-centric design (visual zones not text), voice alerts for safety warnings.<br><br>
+      <strong>Challenge 2 — Connectivity at sea:</strong> Deep sea has poor or no mobile network. The app must work offline or with minimal data.<br>
+      Solution: Pre-download zone data when in port with good connectivity. Cache the last known recommendations and maps locally using Flutter's local storage. Send only lightweight GPS coordinates (few bytes) for location tracking — not heavy data.<br><br>
+      <strong>Challenge 3 — Device quality:</strong> Fishermen may use low-end Android phones. The app must perform on 2GB RAM devices.<br>
+      Solution: Lightweight Flutter build, optimize map tile loading, avoid heavy animations.<br><br>
+      <strong>Challenge 4 — Trust:</strong> Fishermen rely on generational knowledge. An app recommendation contradicting traditional wisdom may be ignored.<br>
+      Solution: Show WHY a zone is recommended — "High fish probability: warm water + low crowd." Transparency builds trust.
+    </div>
+  </div>
+
+  <div class="q hard">
+    <div class="qt">How would you scale MatsyaMitra from Karnataka to all of India? <span class="diff-badge diff-hard">L3 scalability</span></div>
+    <div class="qa">
+      <strong>Data scaling:</strong> India has 7,500+ km of coastline across 9 coastal states. Expanding zone coverage means more GPS grid cells, more satellite data to process. We'd need a backend service (not just Firebase) — likely a Python/FastAPI service that processes satellite data nightly and computes zone scores, storing results in a database.<br><br>
+      <strong>Language scaling:</strong> Add Tamil, Telugu, Malayalam, Odia, Bengali, Marathi, Gujarati — all coastal state languages. Flutter's localization framework supports this cleanly.<br><br>
+      <strong>User scaling:</strong> Firebase Realtime DB handles millions of concurrent connections natively — real-time tracking scales well. The recommendation computation backend would need horizontal scaling.<br><br>
+      <strong>Monetization for sustainability:</strong> Government partnership with fisheries departments (CMFRI, state fisheries boards) — they'd fund it as a public service. Or freemium — basic zone recommendations free, premium weather + market price features paid.<br><br>
+      <strong>Key line:</strong> "The architecture was designed with scalability in mind — Flutter for cross-platform, Firebase for real-time scale, and modular zone scoring that works for any coastline with the right data feeds."
+    </div>
+  </div>
+
+  <div class="q hard">
+    <div class="qt">How does MatsyaMitra relate to AI and Machine Learning? <span class="diff-badge diff-hard">L3 GenAI angle</span></div>
+    <div class="qa">
+      <strong>Current state:</strong> Rule-based scoring — if SST in range X and chlorophyll above Y → high score. Simple but effective for prototype.<br><br>
+      <strong>ML improvement I'd add:</strong> Train a supervised ML model on historical fishing catch data (where fishermen actually caught fish) + historical satellite data. Model learns the actual relationship between ocean conditions and fish presence — more accurate than our manual threshold rules.<br><br>
+      <strong>Specifically:</strong> Random Forest or XGBoost for zone scoring (tabular data — SST, chlorophyll, season, time of day, historical catches). LSTM for time-series prediction — fish patterns change with season and weather cycles.<br><br>
+      <strong>GenAI angle:</strong> A conversational interface — fisherman asks in Kannada: "Where should I go tomorrow morning?" LLM processes the query, fetches zone data, and responds in natural Kannada: "Zone 4 near Mangalore coast looks best — good temperature, low crowd expected."<br><br>
+      <strong>This is the answer that gets you L3</strong> — you show you understand the project's current limitations and have a concrete ML roadmap.
+    </div>
+  </div>
+</div>
+
+<!-- HARD L3 -->
+<div id="tab-hard" class="panel">
+  <div class="warn">These are questions only an L3 candidate would get asked — and only an L3 candidate can answer. Study these carefully.</div>
+
+  <div class="q hard">
+    <div class="qt">What is the difference between real-time and batch processing? Which does MatsyaMitra use and why? <span class="diff-badge diff-hard">L3</span></div>
+    <div class="qa">
+      <strong>Batch processing:</strong> Data is collected and processed at scheduled intervals. Example: satellite data is processed once daily to compute zone scores. Low cost, high throughput, slight delay acceptable.<br><br>
+      <strong>Real-time processing:</strong> Data is processed as it arrives. Example: boat GPS locations are updated and reflected instantly — crowd counts change in real-time.<br><br>
+      <strong>MatsyaMitra uses BOTH:</strong><br>
+      - Satellite data (SST, chlorophyll) → Batch processing daily. Satellite data updates once per day anyway — no point in real-time processing.<br>
+      - Boat location + crowd counting → Real-time via Firebase. Boats move constantly — crowd data must be current.<br><br>
+      <strong>Key insight:</strong> "Choosing the right processing model for each data type is an architectural decision. Applying real-time processing to satellite data would be expensive and wasteful. Applying batch processing to GPS tracking would make the crowd-aware system useless."
+    </div>
+  </div>
+
+  <div class="q hard">
+    <div class="qt">What happens if a fisherman's phone dies at sea? Does MatsyaMitra handle this? <span class="diff-badge diff-hard">L3 edge cases</span></div>
+    <div class="qa">
+      Great edge case — shows L3 systems thinking.<br><br>
+      <strong>Problem:</strong> If phone dies, Firebase still shows the boat's last location — it appears "active" in a zone, inflating crowd count incorrectly.<br><br>
+      <strong>Solution — TTL (Time To Live) on location records:</strong> Each location update includes a timestamp. If no update received from a boat UID within 30 minutes, consider the boat "offline" and remove it from crowd count calculations. Firebase Cloud Functions can run this cleanup automatically.<br><br>
+      <strong>Additional solution:</strong> Boats report "going offline" when entering port — triggering removal from active tracking. This also helps with safety — if a boat goes silent unexpectedly, it could trigger a safety alert to coast guard integration (future feature).<br><br>
+      <strong>Why this answer is L3:</strong> You thought about failure modes, not just happy paths. Real engineers think about what happens when things go wrong.
+    </div>
+  </div>
+
+  <div class="q hard">
+    <div class="qt">Compare MatsyaMitra's architecture to Costra's. What's different and why? <span class="diff-badge diff-hard">L3 cross-project</span></div>
+    <div class="qa">
+      <strong>Costra:</strong> Web app — React + FastAPI + MySQL + Firebase Auth. Stateless REST API backend. Users are tech-savvy businesses. Data is structured, relational. No real-time requirements.<br><br>
+      <strong>MatsyaMitra:</strong> Mobile app — Flutter + Firebase Realtime DB. No dedicated backend server — Firebase handles real-time sync directly. Users are fishermen with low-end devices and poor connectivity. Data is geospatial + real-time. Offline capability is critical.<br><br>
+      <strong>Key architectural difference:</strong> Costra follows a traditional 3-tier web architecture with a dedicated application server. MatsyaMitra uses a Backend-as-a-Service (BaaS) model — Firebase IS the backend for real-time features. This was a deliberate choice — a dedicated server would add latency and complexity for real-time GPS tracking that Firebase handles natively.<br><br>
+      <strong>What this shows:</strong> "I don't use the same architecture for every project. I choose the right tool for the problem — Costra needed relational data + complex business logic so FastAPI + MySQL was right. MatsyaMitra needed real-time geospatial sync so Firebase BaaS was right."
+    </div>
+  </div>
+</div>
+
+<!-- PITCH -->
+<div id="tab-pitch" class="panel">
+  <div class="ok">Say this out loud 3 times tonight. Smooth, confident, under 60 seconds.</div>
+
+  <div class="sl">MatsyaMitra — 60 second pitch</div>
+  <div class="card" style="border-color:#1D9E75">
+    <div class="card-b" style="font-size:13px;line-height:2.1;color:var(--color-text-primary)">
+      "MatsyaMitra is a multilingual Android app I'm building for India's fishing community — starting with the Karavali coast of Karnataka. The core problem: fishermen waste fuel and risk safety going to empty zones. Our solution uses satellite ocean data — sea surface temperature and chlorophyll concentration from INCOIS — to predict optimal fishing zones. What makes it unique is the crowd-aware recommendation system — we track active boats per zone in real-time using Firebase, and redirect fishermen to less crowded zones, preventing overfishing. Think of it as Google Maps routing but for the sea. The app is multilingual — Kannada and English — because that's who will actually use it. Currently in development targeting Karnataka, with a scalable architecture designed for national expansion."
+    </div>
+  </div>
+
+  <div class="sl" style="margin-top:1rem">When to use which project in your answers</div>
+  <div class="card">
+    <div class="card-b" style="line-height:2">
+      🔵 <strong>Architecture / system design questions</strong> → Use Costra (3-tier, MVC, JWT, stateless)<br>
+      🟢 <strong>AI / ML / GenAI questions</strong> → Use SmartShop (YOLOv8, OCR, real-time inference)<br>
+      🟡 <strong>Social impact / why Infosys / motivation questions</strong> → Use MatsyaMitra (fishermen, Karnataka, India-scale problem)<br>
+      🔴 <strong>Real-time systems / Firebase / mobile</strong> → Use MatsyaMitra (Firebase Realtime DB, Flutter, crowd algorithm)<br>
+      🟣 <strong>"What's your most ambitious project?"</strong> → MatsyaMitra — still in development, India-scale vision, real users
+    </div>
+  </div>
+
+  <div class="sl" style="margin-top:.5rem">The one line that connects all 3 projects</div>
+  <div class="card" style="border-color:#7F77DD">
+    <div class="card-b" style="font-size:13px;line-height:2;color:var(--color-text-primary)">
+      "Looking at my three projects — Costra optimizes cloud costs for businesses, SmartShop AI makes shopping accessible for visually impaired people, and MatsyaMitra helps fishermen find better catches safely. All three solve real problems for real people using technology. That's the kind of engineer I want to be at Infosys — someone who builds things that actually matter."
+    </div>
+  </div>
+</div>
+
+<!-- COMPARE -->
+<div id="tab-compare" class="panel">
+  <div class="sl">How to position all 3 projects together when asked</div>
+
+  <div class="card">
+    <div class="card-t" style="color:#185FA5">Costra — Technical depth project</div>
+    <div class="card-b">Shows: Full-stack engineering, backend architecture, auth systems, external API integration, 3-tier MVC, stateless design. Use when: Architecture, backend, system design questions.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-t" style="color:#E24B4A">SmartShop AI — AI/ML project</div>
+    <div class="card-b">Shows: Computer vision, real-time inference, YOLOv8, OCR pipeline, accessibility-focused AI. Use when: AI, ML, GenAI, Python, real-time systems questions.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-t" style="color:#0F6E56">MatsyaMitra — Scale + impact project</div>
+    <div class="card-b">Shows: Mobile development, real-time geospatial systems, Firebase, Flutter, crowd algorithms, social impact thinking, India-scale product vision. Use when: Social impact, mobile, real-time, motivation, scalability questions.</div>
+  </div>
+
+  <div class="ok" style="margin-top:8px">
+    <strong>The ideal answer when asked "tell me about your projects":</strong><br>
+    Mention all 3 in 3 sentences — one each. Then say "I'm happy to go deep on any of these." Let the interviewer choose. This shows breadth AND gives you control over which one gets probed first.
+  </div>
+</div>
+
+<script>
+function sw(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>

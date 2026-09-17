@@ -2,51 +2,66 @@
  * QuickActions — 2×2 grid of quick action buttons
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useLanguage, type TranslationKey } from '../../i18n';
 
 interface QuickAction {
   id: string;
   icon: string;
-  label: string;
+  label?: string;
+  labelKey?: TranslationKey;
   onPress?: () => void;
 }
 
 const defaultActions: QuickAction[] = [
-  { id: 'fleet', icon: 'sail-boat', label: 'Fleet Tracking' },
-  { id: 'catch', icon: 'fish', label: 'Catch Logs' },
-  { id: 'distress', icon: 'alert-octagon', label: 'Distress Alerts' },
-  { id: 'equipment', icon: 'wrench', label: 'Equipment' },
+  { id: 'fleet', icon: 'sail-boat', labelKey: 'qa_fleet', label: 'Fleet Tracking' },
+  { id: 'catch', icon: 'fish', labelKey: 'qa_catch', label: 'Catch Logs' },
+  { id: 'distress', icon: 'alert-octagon', labelKey: 'qa_distress', label: 'Distress Alerts' },
+  { id: 'equipment', icon: 'wrench', labelKey: 'qa_equipment', label: 'Equipment' },
 ];
 
 interface QuickActionsProps {
   actions?: QuickAction[];
+  onActionPress?: (actionId: string) => void;
 }
 
 const QuickActions: React.FC<QuickActionsProps> = ({
   actions = defaultActions,
+  onActionPress,
 }) => {
+  const { t } = useLanguage();
+
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
-        {actions.map((action) => (
-          <TouchableOpacity
-            key={action.id}
-            style={styles.card}
-            onPress={action.onPress}
-            activeOpacity={0.7}>
-            <View style={styles.iconContainer}>
-              <Icon
-                name={action.icon}
-                size={28}
-                color={Colors.primaryAccent}
-              />
-            </View>
-            <Text style={styles.label}>{action.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {actions.map((action) => {
+          const displayLabel = action.labelKey ? t(action.labelKey) : action.label;
+          return (
+            <TouchableOpacity
+              key={action.id}
+              style={styles.card}
+              onPress={() => {
+                if (action.onPress) {
+                  action.onPress();
+                } else if (onActionPress) {
+                  onActionPress(action.id);
+                }
+              }}
+              activeOpacity={0.7}>
+              <View style={styles.iconContainer}>
+                <Icon
+                  name={action.icon}
+                  size={28}
+                  color={Colors.primaryAccent}
+                />
+              </View>
+              <Text style={styles.label}>{displayLabel}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );

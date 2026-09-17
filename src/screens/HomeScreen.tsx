@@ -13,16 +13,22 @@ import LocationSelectorModal from '../components/home/LocationSelectorModal';
 import WeatherCard from '../components/home/WeatherCard';
 import FishingAdvisory from '../components/home/FishingAdvisory';
 import QuickActions from '../components/home/QuickActions';
+import CatchLogModal from '../components/home/CatchLogModal';
+import DistressModal from '../components/home/DistressModal';
+import EquipmentChecklistModal from '../components/home/EquipmentChecklistModal';
+import FleetTrackingModal from '../components/home/FleetTrackingModal';
 import {
   useCurrentState,
   useAdvisories,
   transformCurrentStateToWeather,
   getCanonicalCityName,
 } from '../services/api';
+import { useLanguage } from '../i18n';
 
 const HomeScreen: React.FC = () => {
-  const [language, setLanguage] = useState<'en' | 'kn'>('en');
+  const { t } = useLanguage();
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
+  const [activeModal, setActiveModal] = useState<'catch' | 'distress' | 'equipment' | 'fleet' | null>(null);
 
   // Live backend hooks
   const {
@@ -45,10 +51,6 @@ const HomeScreen: React.FC = () => {
 
   const handleRefresh = async () => {
     await Promise.all([refreshCurrentState(), refreshAdvisories()]);
-  };
-
-  const handleLanguageToggle = () => {
-    setLanguage((prev) => (prev === 'en' ? 'kn' : 'en'));
   };
 
   // Open location selector modal
@@ -99,11 +101,7 @@ const HomeScreen: React.FC = () => {
         <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBackground} />
 
         {/* Top Bar */}
-        <TopBar
-          language={language}
-          onLanguageToggle={handleLanguageToggle}
-          onMenuPress={() => {}}
-        />
+        <TopBar onMenuPress={() => {}} />
 
         {/* Connectivity Status Banner */}
         <View style={styles.statusRow}>
@@ -114,7 +112,7 @@ const HomeScreen: React.FC = () => {
             ]}
           />
           <Text style={styles.statusText}>
-            {isStateOnline ? 'LIVE TELEMETRY CONNECTED' : 'OFFLINE / LIVE DATA UNAVAILABLE'}
+            {isStateOnline ? t('live_connected') : t('offline_cached')}
           </Text>
         </View>
 
@@ -127,10 +125,10 @@ const HomeScreen: React.FC = () => {
         ) : (
           <View style={styles.unavailableCard}>
             <Icon name="cloud-off-outline" size={36} color={Colors.textSubtleOnDark} />
-            <Text style={styles.unavailableTitle}>Live Telemetry Unavailable</Text>
+            <Text style={styles.unavailableTitle}>{t('offline_cached')}</Text>
             <Text style={styles.unavailableSubtitle}>
               {isStateLoading
-                ? 'Connecting to MatsyaMitra API server...'
+                ? t('connecting')
                 : 'Unable to reach backend. Real-time wind, wave, and ocean observations will appear when connected.'}
             </Text>
           </View>
@@ -145,21 +143,25 @@ const HomeScreen: React.FC = () => {
         ) : (
           <View style={styles.advisoryUnavailableContainer}>
             <View style={styles.advisoryHeader}>
-              <Text style={styles.sectionTitle}>Today's Fishing Advisory</Text>
+              <Text style={styles.sectionTitle}>{t('advisory_title')}</Text>
             </View>
             <View style={styles.advisoryUnavailableCard}>
               <Icon name="information-outline" size={24} color={Colors.textSubtleOnDark} />
               <Text style={styles.advisoryUnavailableText}>
-                {isAdvLoading
-                  ? 'Loading INCOIS advisories...'
-                  : 'No active INCOIS advisories currently available. Live bulletins will appear when published.'}
+                {isAdvLoading ? t('advisory_loading') : t('advisory_none_active')}
               </Text>
             </View>
           </View>
         )}
 
         {/* Quick Actions */}
-        <QuickActions />
+        <QuickActions
+          onActionPress={(actionId) => {
+            if (actionId === 'catch' || actionId === 'distress' || actionId === 'equipment' || actionId === 'fleet') {
+              setActiveModal(actionId);
+            }
+          }}
+        />
       </ScrollView>
 
       {/* Coastal Location Selector Modal */}
@@ -169,6 +171,49 @@ const HomeScreen: React.FC = () => {
         onSelectLocation={handleSelectLocation}
         selectedLocationId={selectedState?.location_id}
         states={states}
+      />
+
+      {/* Quick Action Modals */}
+      <CatchLogModal
+        visible={activeModal === 'catch'}
+        onClose={() => setActiveModal(null)}
+        currentPort={
+          selectedState
+            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
+            : 'Karwar'
+        }
+      />
+
+      <DistressModal
+        visible={activeModal === 'distress'}
+        onClose={() => setActiveModal(null)}
+        currentPort={
+          selectedState
+            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
+            : 'Karwar'
+        }
+        latitude={selectedState?.latitude}
+        longitude={selectedState?.longitude}
+      />
+
+      <EquipmentChecklistModal
+        visible={activeModal === 'equipment'}
+        onClose={() => setActiveModal(null)}
+        currentPort={
+          selectedState
+            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
+            : 'Karwar'
+        }
+      />
+
+      <FleetTrackingModal
+        visible={activeModal === 'fleet'}
+        onClose={() => setActiveModal(null)}
+        currentPort={
+          selectedState
+            ? getCanonicalCityName(selectedState.location_id, selectedState.city_name)
+            : 'Karwar'
+        }
       />
     </View>
   );

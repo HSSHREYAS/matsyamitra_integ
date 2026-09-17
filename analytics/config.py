@@ -3,10 +3,14 @@ from datetime import date, timedelta
 import os
 from pathlib import Path
 from typing import Any
+from dotenv import load_dotenv
 
 
 ANALYTICS_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = ANALYTICS_ROOT.parent
+
+# Load local .env file if present
+load_dotenv(PROJECT_ROOT / ".env")
 
 EARTH_ENGINE_PROJECT_ID = os.getenv(
     "MATSYAMITRA_GEE_PROJECT",

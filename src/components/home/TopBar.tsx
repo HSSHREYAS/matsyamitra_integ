@@ -6,6 +6,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 interface TopBarProps {
   onMenuPress?: () => void;
@@ -16,25 +17,29 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({
   onMenuPress,
   onLanguageToggle,
-  language = 'en',
+  language: propLanguage,
 }) => {
+  const { language: ctxLanguage, toggleLanguage, t } = useLanguage();
+  const currentLang = propLanguage || ctxLanguage;
+  const handleToggle = onLanguageToggle || toggleLanguage;
+
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <Text style={styles.appName}>MatsyaMitra</Text>
+        <Text style={styles.appName}>{t('app_name')}</Text>
         <View style={styles.proBadge}>
-          <Text style={styles.proText}>Pro</Text>
+          <Text style={styles.proText}>{t('badge_pro')}</Text>
         </View>
       </View>
       <View style={styles.right}>
         <TouchableOpacity
-          onPress={onLanguageToggle}
+          onPress={handleToggle}
           style={styles.langToggle}
           activeOpacity={0.7}>
           <Text
             style={[
               styles.langOption,
-              language === 'en' && styles.langActive,
+              currentLang === 'en' && styles.langActive,
             ]}>
             EN
           </Text>
@@ -42,7 +47,7 @@ const TopBar: React.FC<TopBarProps> = ({
           <Text
             style={[
               styles.langOption,
-              language === 'kn' && styles.langActive,
+              currentLang === 'kn' && styles.langActive,
             ]}>
             ಕನ್ನಡ
           </Text>

@@ -12,17 +12,28 @@ import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import { useLanguage, type TranslationKey } from '../i18n';
 
 const Tab = createBottomTabNavigator();
 
-const tabConfig = [
-  { name: 'Home', component: HomeScreen, icon: 'home', iconOutline: 'home-outline' },
-  { name: 'Map', component: MapScreen, icon: 'map', iconOutline: 'map-outline' },
-  { name: 'Alerts', component: AlertsScreen, icon: 'bell', iconOutline: 'bell-outline' },
-  { name: 'Profile', component: ProfileScreen, icon: 'account', iconOutline: 'account-outline' },
+interface TabConfigItem {
+  name: string;
+  labelKey: TranslationKey;
+  component: React.ComponentType<any>;
+  icon: string;
+  iconOutline: string;
+}
+
+const tabConfig: TabConfigItem[] = [
+  { name: 'Home', labelKey: 'tab_home', component: HomeScreen, icon: 'home', iconOutline: 'home-outline' },
+  { name: 'Map', labelKey: 'tab_map', component: MapScreen, icon: 'map', iconOutline: 'map-outline' },
+  { name: 'Alerts', labelKey: 'tab_alerts', component: AlertsScreen, icon: 'bell', iconOutline: 'bell-outline' },
+  { name: 'Profile', labelKey: 'tab_profile', component: ProfileScreen, icon: 'account', iconOutline: 'account-outline' },
 ];
 
 const BottomTabNavigator: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -38,6 +49,7 @@ const BottomTabNavigator: React.FC = () => {
           name={tab.name}
           component={tab.component}
           options={{
+            tabBarLabel: t(tab.labelKey),
             tabBarIcon: ({ focused, color, size }) => (
               <View style={focused ? styles.activeIconContainer : undefined}>
                 <Icon

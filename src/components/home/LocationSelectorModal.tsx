@@ -23,6 +23,7 @@ import {
   getCanonicalCityName,
   type CurrentStateResponse,
 } from '../../services/api';
+import { useLanguage } from '../../i18n';
 
 export interface LocationItemData {
   id: string;
@@ -47,6 +48,7 @@ const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
   selectedLocationId,
   states = [],
 }) => {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Map state details onto canonical locations list
@@ -197,7 +199,7 @@ const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <View>
-                <Text style={styles.headerTitle}>Select Coastal Location</Text>
+                <Text style={styles.headerTitle}>{t('loc_select_title')}</Text>
                 <Text style={styles.headerSubtitle}>
                   25 canonical coastal stations along Karnataka
                 </Text>
@@ -220,7 +222,7 @@ const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search coastal location or station..."
+                placeholder={t('loc_search_placeholder')}
                 placeholderTextColor={Colors.textSubtleOnDark}
                 value={searchQuery}
                 onChangeText={setSearchQuery}

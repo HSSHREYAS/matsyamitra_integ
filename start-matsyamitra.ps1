@@ -240,6 +240,10 @@ To resolve:
 $env:ANDROID_HOME = $androidSdkPath
 $env:ANDROID_SDK_ROOT = $androidSdkPath
 
+if ([string]::IsNullOrEmpty($env:ANDROID_AVD_HOME) -and (Test-Path "E:\Android\avd")) {
+    $env:ANDROID_AVD_HOME = "E:\Android\avd"
+}
+
 $sdkBins = @(
     (Join-Path $androidSdkPath "platform-tools"),
     (Join-Path $androidSdkPath "emulator"),
@@ -488,7 +492,7 @@ Write-StepOk "Python dependencies"
 
 function Test-BackendHealth {
     try {
-        $response = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/health" -Method Get -TimeoutSec 2 -ErrorAction Stop
+        $response = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/health" -Method Get -TimeoutSec 3 -ErrorAction Stop
         if ($response -and ($response.status -eq "ok" -or $response.database_status)) {
             return $true
         }
@@ -539,13 +543,13 @@ Check the opened 'MatsyaMitra Backend API' PowerShell window for Python tracebac
 
 function Test-MetroHealth {
     try {
-        $response = Invoke-WebRequest -Uri "http://localhost:8081/status" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+        $response = Invoke-WebRequest -Uri "http://127.0.0.1:8081/status" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
         if ($response -and $response.Content -match 'packager-status:running') {
             return $true
         }
-        return (Test-PortListening -Hostname "localhost" -Port 8081 -TimeoutMs 1000)
+        return (Test-PortListening -Hostname "127.0.0.1" -Port 8081 -TimeoutMs 1000)
     } catch {
-        return (Test-PortListening -Hostname "localhost" -Port 8081 -TimeoutMs 1000)
+        return (Test-PortListening -Hostname "127.0.0.1" -Port 8081 -TimeoutMs 1000)
     }
 }
 
@@ -592,7 +596,7 @@ Write-StepInfo "Building and launching MatsyaMitra on Android device..."
 Write-Host ""
 
 $env:PORT = "8081"
-npx react-native run-android --port 8081
+npx react-native run-android --no-packager --port 8081
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""

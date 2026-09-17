@@ -2,19 +2,33 @@
  * WeatherCard — Hero weather card with temperature, metrics, and ocean data
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 import type { WeatherData } from '../../data/mockWeather';
-import Badge from '../common/Badge';
+import { useLanguage } from '../../i18n';
 
 interface WeatherCardProps {
   weather: WeatherData;
 }
 
 const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
+  const { t } = useLanguage();
+
+  const conditionText = useMemo(() => {
+    const c = (weather.condition || '').toUpperCase();
+    if (c.includes('CLEAR') || c.includes('CALM')) return t('cond_clear_calm');
+    if (c.includes('ROUGH')) return t('cond_rough_sea');
+    if (c.includes('MODERATE')) return t('cond_moderate');
+    if (c.includes('WIND') || c.includes('GALE')) return t('cond_high_wind');
+    return weather.condition;
+  }, [weather.condition, t]);
+
+  const windUnit = weather.windUnit === 'km/h' ? t('km_per_hour') : weather.windUnit;
+  const waveUnit = weather.waveUnit === 'm' ? ` ${t('meters')}` : weather.waveUnit;
+
   return (
     <View style={styles.outerContainer}>
       <LinearGradient
@@ -26,7 +40,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
         <View style={styles.topRow}>
           <View style={styles.conditionBadge}>
             <Icon name={weather.conditionIcon} size={14} color={Colors.primaryAccent} />
-            <Text style={styles.conditionText}>{weather.condition}</Text>
+            <Text style={styles.conditionText}>{conditionText}</Text>
           </View>
         </View>
 
@@ -44,27 +58,27 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
         {/* Metrics row */}
         <View style={styles.metricsRow}>
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>WIND SPEED</Text>
+            <Text style={styles.metricLabel}>{t('wind_speed')}</Text>
             <View style={styles.metricValueRow}>
               <Icon name="weather-windy" size={14} color={Colors.primaryAccent} />
               <Text style={styles.metricValue}>
-                {weather.windSpeed} {weather.windUnit}
+                {weather.windSpeed} {windUnit}
               </Text>
             </View>
           </View>
           <View style={styles.metricDivider} />
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>WAVE HEIGHT</Text>
+            <Text style={styles.metricLabel}>{t('wave_height')}</Text>
             <View style={styles.metricValueRow}>
               <Icon name="wave" size={14} color={Colors.primaryAccent} />
               <Text style={styles.metricValue}>
-                {weather.waveHeight}{weather.waveUnit}
+                {weather.waveHeight}{waveUnit}
               </Text>
             </View>
           </View>
           <View style={styles.metricDivider} />
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>HUMIDITY</Text>
+            <Text style={styles.metricLabel}>{t('humidity')}</Text>
             <View style={styles.metricValueRow}>
               <Icon name="water-percent" size={14} color={Colors.primaryAccent} />
               <Text style={styles.metricValue}>{weather.humidity}%</Text>
@@ -78,11 +92,11 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
         {/* Ocean data */}
         <View style={styles.oceanRow}>
           <View style={styles.oceanChip}>
-            <Text style={styles.oceanLabel}>SEA TEMP</Text>
+            <Text style={styles.oceanLabel}>{t('sea_temp')}</Text>
             <Text style={styles.oceanValue}>{weather.seaTemp}°C</Text>
           </View>
           <View style={styles.oceanChip}>
-            <Text style={styles.oceanLabel}>CHLOROPHYLL</Text>
+            <Text style={styles.oceanLabel}>{t('chlorophyll')}</Text>
             <Text style={styles.oceanValue}>
               {weather.chlorophyll} {weather.chlorophyllUnit}
             </Text>
