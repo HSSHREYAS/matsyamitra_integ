@@ -10,7 +10,7 @@
     "marine:sync": "python -m analytics.live_open_meteo_pipeline",
     "marine:schedule": "python -m analytics.open_meteo_scheduler",
     "marine:test": "jest __tests__/marineOpenMeteo.test.ts --runInBand",
-    "incois:scrape": "python analytics/incois_scheduler.py --once",
+    "incois:scrape": "python analytics/incois/scrape_incois_advisories.py",
     "incois:schedule": "python analytics/incois_scheduler.py",
     "incois:test": "python -m pytest analytics/incois/tests.py -v",
     "start": "react-native start",

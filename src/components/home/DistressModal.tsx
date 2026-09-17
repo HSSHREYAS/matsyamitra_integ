@@ -214,13 +214,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: Colors.secondaryBackground,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     maxHeight: '90%',
     paddingBottom: Spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 77, 77, 0.2)',
+    borderColor: Colors.borderLight,
     ...Shadows.cardHeavy,
   },
   header: {
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: Colors.borderLight,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -250,12 +250,12 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontSize: 18,
     fontWeight: '700',
-    color: '#FF6B6B',
+    color: '#D32F2F',
   },
   headerSubtitle: {
     ...Typography.bodySmall,
     fontSize: 11,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   closeBtn: {
@@ -267,11 +267,11 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxxl,
   },
   beaconCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: '#FEF2F2',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#FEE2E2',
     marginBottom: Spacing.lg,
   },
   beaconHeader: {
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   beaconTitle: {
     ...Typography.micro,
-    color: '#FF6B6B',
+    color: '#D32F2F',
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -304,18 +304,18 @@ const styles = StyleSheet.create({
   coordDivider: {
     width: 1,
     height: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#FCA5A5',
   },
   coordLabel: {
     ...Typography.micro,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginBottom: 2,
   },
   coordValue: {
     ...Typography.body,
     fontSize: 18,
     fontWeight: '800',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   stationNote: {
     ...Typography.bodySmall,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontWeight: '800',
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
   },
   sosBtnSubtitle: {
     ...Typography.bodySmall,
@@ -364,7 +364,15 @@ const styles = StyleSheet.create({
     ...Typography.micro,
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+  },
+  sectionTitle: {
+    ...Typography.micro,
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textSecondary,
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
   },
@@ -372,15 +380,20 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
   },
+  contactsList: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
   contactCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.borderLight,
+    ...Shadows.card,
   },
   contactLeft: {
     flexDirection: 'row',
@@ -400,12 +413,12 @@ const styles = StyleSheet.create({
   contactTitle: {
     ...Typography.bodySmall,
     fontWeight: '700',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   contactSubtitle: {
     ...Typography.bodySmall,
     fontSize: 10,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 1,
   },
   callBtn: {

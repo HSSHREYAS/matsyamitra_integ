@@ -198,17 +198,17 @@ const FleetTrackingModal: React.FC<FleetTrackingModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(5, 12, 22, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: Colors.secondaryBackground,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     maxHeight: '90%',
     paddingBottom: Spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: Colors.borderLight,
     ...Shadows.cardHeavy,
   },
   header: {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: Colors.borderLight,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: BorderRadius.md,
-    backgroundColor: 'rgba(15, 166, 136, 0.15)',
+    backgroundColor: Colors.primaryAccentLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -238,12 +238,12 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   headerSubtitle: {
     ...Typography.bodySmall,
     fontSize: 11,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   closeBtn: {
@@ -255,12 +255,12 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxxl,
   },
   overviewCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: '#F8FAFC',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.borderLight,
   },
   overviewRow: {
     flexDirection: 'row',
@@ -274,30 +274,30 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     height: 45,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: Colors.borderLight,
   },
   overviewLabel: {
     ...Typography.micro,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   overviewValue: {
     ...Typography.body,
     fontSize: 22,
     fontWeight: '800',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   overviewSub: {
     ...Typography.bodySmall,
     fontSize: 10,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   balancingCallout: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: 'rgba(15, 166, 136, 0.08)',
+    backgroundColor: 'rgba(15, 166, 136, 0.1)',
     borderRadius: BorderRadius.md,
     padding: Spacing.sm + 2,
     borderWidth: 1,
@@ -310,11 +310,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
   },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(15, 166, 136, 0.1)',
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 6,
+  },
+  offlineBannerText: {
+    ...Typography.bodySmall,
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 15,
+    color: Colors.textSecondary,
+  },
   sectionTitle: {
     ...Typography.micro,
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
   },
@@ -322,11 +338,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   portCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.borderLight,
+    ...Shadows.card,
   },
   portTop: {
     flexDirection: 'row',
@@ -337,12 +354,12 @@ const styles = StyleSheet.create({
   portName: {
     ...Typography.bodySmall,
     fontWeight: '700',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   portWeather: {
     ...Typography.bodySmall,
     fontSize: 11,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   crowdBadge: {
@@ -359,7 +376,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: Colors.borderLight,
     paddingTop: Spacing.xs + 2,
   },
   metricItem: {
@@ -369,8 +386,8 @@ const styles = StyleSheet.create({
   },
   metricText: {
     ...Typography.bodySmall,
-    color: Colors.textSecondary,
     fontSize: 11,
+    color: Colors.textSecondary,
   },
 });
 

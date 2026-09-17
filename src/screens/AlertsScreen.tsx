@@ -19,12 +19,20 @@ import FilterChips from '../components/alerts/FilterChips';
 import EmptyState from '../components/alerts/EmptyState';
 import AlertCard from '../components/alerts/AlertCard';
 import { useAlerts, type AlertItem } from '../services/api';
-
-const FILTERS = ['All', 'Official', 'Weather', 'Advisory', 'News'];
+import { useLanguage } from '../i18n';
 
 const AlertsScreen: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState('All');
+  const { t } = useLanguage();
+  const [activeFilter, setActiveFilter] = useState('all');
   const [showEmpty, setShowEmpty] = useState(false);
+
+  const filterItems = useMemo(() => [
+    { key: 'all', label: t('alerts_filter_all') },
+    { key: 'official', label: t('alerts_filter_official') },
+    { key: 'weather', label: t('alerts_filter_weather') },
+    { key: 'advisory', label: t('alerts_filter_advisory') },
+    { key: 'news', label: t('alerts_filter_news') },
+  ], [t]);
 
   // Live backend hook
   const { alerts: liveAlerts, isLoading, isOnline, refresh } = useAlerts();
@@ -35,7 +43,7 @@ const AlertsScreen: React.FC = () => {
   }, [liveAlerts]);
 
   const filteredAlerts = useMemo(() => {
-    if (activeFilter === 'All') return alerts;
+    if (activeFilter.toLowerCase() === 'all') return alerts;
     return alerts.filter(
       (alert) => alert.category.toLowerCase() === activeFilter.toLowerCase()
     );
@@ -55,9 +63,9 @@ const AlertsScreen: React.FC = () => {
           <Icon name="menu" size={24} color={Colors.textOnDark} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.topBarTitle}>Alerts & Notices</Text>
+          <Text style={styles.topBarTitle}>{t('alerts_screen_title')}</Text>
           <Text style={styles.subStatusText}>
-            {isOnline ? 'LIVE FEED CONNECTED' : 'OFFLINE / CACHED NOTICES'}
+            {isOnline ? t('alerts_live_connected') : t('alerts_offline_cached')}
           </Text>
         </View>
         <TouchableOpacity activeOpacity={0.7} onPress={() => refresh()}>
@@ -67,7 +75,7 @@ const AlertsScreen: React.FC = () => {
 
       {/* Filter Chips */}
       <FilterChips
-        filters={FILTERS}
+        filters={filterItems}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
       />

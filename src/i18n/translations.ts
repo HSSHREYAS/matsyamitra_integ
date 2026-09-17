@@ -14,6 +14,18 @@ export interface Translations {
 
   // Top Bar & Connectivity
   app_name: string;
+  app_subtitle: string;
+  greeting_morning: string;
+  greeting_afternoon: string;
+  greeting_evening: string;
+  user_full_name: string;
+  banner_slogan_kn: string;
+  banner_slogan_en: string;
+  current_conditions: string;
+  safe_to_fish: string;
+  caution_to_fish: string;
+  unsafe_to_fish: string;
+  view_all: string;
   badge_pro: string;
   live_connected: string;
   offline_cached: string;
@@ -45,6 +57,8 @@ export interface Translations {
   advisory_none_active: string;
   advisory_safe_notice: string;
   advisory_loading: string;
+  advisory_view_more: string;
+  advisory_show_less: string;
 
   // Quick Action Cards
   qa_fleet: string;
@@ -138,6 +152,19 @@ export interface Translations {
   loc_search_placeholder: string;
   loc_active_badge: string;
 
+  // Alerts & Notices Screen
+  alerts_screen_title: string;
+  alerts_live_connected: string;
+  alerts_offline_cached: string;
+  alerts_filter_all: string;
+  alerts_filter_official: string;
+  alerts_filter_weather: string;
+  alerts_filter_advisory: string;
+  alerts_filter_news: string;
+  alerts_empty_title: string;
+  alerts_empty_subtitle: string;
+  alerts_empty_refresh_btn: string;
+
   // General Actions
   btn_close: string;
   btn_cancel: string;
@@ -153,6 +180,18 @@ export const translations: Record<Language, Translations> = {
     tab_profile: 'Profile',
 
     app_name: 'MatsyaMitra',
+    app_subtitle: 'Your Fishing Companion',
+    greeting_morning: 'Good Morning',
+    greeting_afternoon: 'Good Afternoon',
+    greeting_evening: 'Good Evening',
+    user_full_name: 'Ramesh Kumar!',
+    banner_slogan_kn: 'ಸುರಕ್ಷಿತ ಸಮುದ್ರ,\nಹೆಚ್ಚು ಮೀನು, ಉತ್ತಮ ಜೀವನ',
+    banner_slogan_en: 'Safer Seas • Better Catch • Stronger Tomorrow',
+    current_conditions: 'Current Conditions',
+    safe_to_fish: 'Safe to Fish',
+    caution_to_fish: 'Caution Needed',
+    unsafe_to_fish: 'Do Not Venture',
+    view_all: 'View All',
     badge_pro: 'Pro',
     live_connected: 'LIVE TELEMETRY CONNECTED',
     offline_cached: 'OFFLINE / LIVE DATA UNAVAILABLE',
@@ -181,6 +220,8 @@ export const translations: Record<Language, Translations> = {
     advisory_none_active: 'No active INCOIS advisories currently available. Live bulletins will appear when published.',
     advisory_safe_notice: 'Conditions are favorable for normal coastal fishing operations.',
     advisory_loading: 'Loading INCOIS advisories...',
+    advisory_view_more: 'View More',
+    advisory_show_less: 'Show Less',
 
     qa_fleet: 'Fleet Tracking',
     qa_catch: 'Catch Logs',
@@ -267,6 +308,18 @@ export const translations: Record<Language, Translations> = {
     loc_search_placeholder: 'Search port or harbor...',
     loc_active_badge: 'ACTIVE',
 
+    alerts_screen_title: 'Alerts & Notices',
+    alerts_live_connected: 'LIVE FEED CONNECTED',
+    alerts_offline_cached: 'OFFLINE / CACHED NOTICES',
+    alerts_filter_all: 'All',
+    alerts_filter_official: 'Official',
+    alerts_filter_weather: 'Weather',
+    alerts_filter_advisory: 'Advisory',
+    alerts_filter_news: 'News',
+    alerts_empty_title: 'No new alerts today',
+    alerts_empty_subtitle: "The sea is calm. We'll notify you if any official advisories are issued.",
+    alerts_empty_refresh_btn: 'CHECK FOR UPDATES',
+
     btn_close: 'Close',
     btn_cancel: 'Cancel',
     btn_confirm: 'Confirm',
@@ -280,6 +333,18 @@ export const translations: Record<Language, Translations> = {
     tab_profile: 'ಪ್ರೊಫೈಲ್',
 
     app_name: 'ಮತ್ಸ್ಯಮಿತ್ರ',
+    app_subtitle: 'ನಿಮ್ಮ ಮೀನುಗಾರಿಕೆಯ ಸಂಗಾತಿ',
+    greeting_morning: 'ಶುಭೋದಯ',
+    greeting_afternoon: 'ಶುಭ ಮಧ್ಯಾಹ್ನ',
+    greeting_evening: 'ಶುಭ ಸಂಜೆ',
+    user_full_name: 'ರಮೇಶ್ ಕುಮಾರ್!',
+    banner_slogan_kn: 'ಸುರಕ್ಷಿತ ಸಮುದ್ರ,\nಹೆಚ್ಚು ಮೀನು, ಉತ್ತಮ ಜೀವನ',
+    banner_slogan_en: 'ಸುರಕ್ಷಿತ ಸಮುದ್ರ • ಹೆಚ್ಚು ಮೀನು • ಬಲಿಷ್ಠ ಭವಿಷ್ಯ',
+    current_conditions: 'ಪ್ರಸ್ತುತ ವಾತಾವರಣ',
+    safe_to_fish: 'ಮೀನುಗಾರಿಕೆಗೆ ಸುರಕ್ಷಿತ',
+    caution_to_fish: 'ಎಚ್ಚರಿಕೆ ವಹಿಸಿ',
+    unsafe_to_fish: 'ಸಮುದ್ರಕ್ಕೆ ಇಳಿಯಬೇಡಿ',
+    view_all: 'ಎಲ್ಲವನ್ನೂ ನೋಡಿ',
     badge_pro: 'ಪ್ರೊ',
     live_connected: 'ಲೈವ್ ಸಂಪರ್ಕದಲ್ಲಿದೆ',
     offline_cached: 'ನೆಟ್‌ವರ್ಕ್ ಇಲ್ಲ / ಹಳೆಯ ಮಾಹಿತಿ',
@@ -308,6 +373,8 @@ export const translations: Record<Language, Translations> = {
     advisory_none_active: 'ಯಾವುದೇ ಹೊಸ ಅಪಾಯದ ಎಚ್ಚರಿಕೆ ಇಲ್ಲ. ಸಮುದ್ರ ಶಾಂತವಾಗಿದೆ, ಕರಾವಳಿ ಮೀನುಗಾರಿಕೆಗೆ ಹೋಗಬಹುದು.',
     advisory_safe_notice: 'ಸಾಮಾನ್ಯ ಮೀನುಗಾರಿಕೆಗೆ ಪರಿಸ್ಥಿತಿ ಅನುಕೂಲಕರವಾಗಿದೆ.',
     advisory_loading: 'ಮಾಹಿತಿ ಪಡೆಯಲಾಗುತ್ತಿದೆ...',
+    advisory_view_more: 'ಇನ್ನಷ್ಟು ಸಲಹೆಗಳು',
+    advisory_show_less: 'ಕಡಿಮೆ ಮಾಡಿ',
 
     qa_fleet: 'ದೋಣಿಗಳ ಮಾಹಿತಿ',
     qa_catch: 'ಮೀನಿನ ಲೆಕ್ಕ',
@@ -393,6 +460,18 @@ export const translations: Record<Language, Translations> = {
     loc_select_title: 'ಕರಾವಳಿ ಬಂದರು ಆಯ್ಕೆಮಾಡಿ',
     loc_search_placeholder: 'ಬಂದರು ಹುಡುಕಿ...',
     loc_active_badge: 'ಸಕ್ರಿಯ',
+
+    alerts_screen_title: 'ಎಚ್ಚರಿಕೆಗಳು & ಪ್ರಕಟಣೆಗಳು',
+    alerts_live_connected: 'ಲೈವ್ ಸಂಪರ್ಕದಲ್ಲಿದೆ',
+    alerts_offline_cached: 'ಆಫ್‌ಲೈನ್ / ಹಳೆಯ ಪ್ರಕಟಣೆಗಳು',
+    alerts_filter_all: 'ಎಲ್ಲವೂ',
+    alerts_filter_official: 'ಅಧಿಕೃತ',
+    alerts_filter_weather: 'ಹವಾಮಾನ',
+    alerts_filter_advisory: 'ಮೀನುಗಾರಿಕೆ ಮಾಹಿತಿ',
+    alerts_filter_news: 'ಸುದ್ದಿ',
+    alerts_empty_title: 'ಇಂದು ಯಾವುದೇ ಹೊಸ ಎಚ್ಚರಿಕೆಗಳಿಲ್ಲ',
+    alerts_empty_subtitle: 'ಸಮುದ್ರ ಶಾಂತವಾಗಿದೆ. ಅಧಿಕೃತ ಮಾಹಿತಿ ಅಥವಾ ಹೊಸ ಎಚ್ಚರಿಕೆ ಬಂದರೆ ತಕ್ಷಣ ಇಲ್ಲಿ ತಿಳಿಸಲಾಗುವುದು.',
+    alerts_empty_refresh_btn: 'ಹೊಸ ಮಾಹಿತಿ ಪರಿಶೀಲಿಸಿ',
 
     btn_close: 'ಮುಚ್ಚಿ',
     btn_cancel: 'ರದ್ದು',

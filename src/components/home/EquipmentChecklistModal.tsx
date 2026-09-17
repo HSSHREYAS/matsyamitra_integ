@@ -208,13 +208,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: Colors.secondaryBackground,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     maxHeight: '90%',
     paddingBottom: Spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: Colors.borderLight,
     ...Shadows.cardHeavy,
   },
   header: {
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: Colors.borderLight,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: BorderRadius.md,
-    backgroundColor: 'rgba(15, 166, 136, 0.15)',
+    backgroundColor: Colors.primaryAccentLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -244,26 +244,26 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   headerSubtitle: {
     ...Typography.bodySmall,
     fontSize: 11,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   closeBtn: {
     padding: Spacing.xs,
   },
   readinessCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: '#F8FAFC',
     borderRadius: BorderRadius.lg,
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
     marginBottom: Spacing.sm,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.borderLight,
   },
   readinessTop: {
     flexDirection: 'row',
@@ -273,12 +273,12 @@ const styles = StyleSheet.create({
   },
   readinessTitle: {
     ...Typography.micro,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     letterSpacing: 0.5,
   },
   readinessSubtitle: {
     ...Typography.bodySmall,
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   progressBarTrack: {
     height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#E2E8F0',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -310,14 +310,14 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   itemCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.borderLight,
   },
   itemCardChecked: {
     backgroundColor: 'rgba(15, 166, 136, 0.08)',
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   itemLabel: {
     ...Typography.bodySmall,
     fontWeight: '700',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
     flex: 1,
   },
   itemLabelChecked: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   itemDesc: {
     ...Typography.bodySmall,
     fontSize: 11,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginTop: 2,
     lineHeight: 15,
   },

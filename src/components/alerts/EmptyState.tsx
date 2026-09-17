@@ -6,12 +6,15 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 interface EmptyStateProps {
   onRefresh?: () => void;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ onRefresh }) => {
+  const { t } = useLanguage();
+
   return (
     <View style={styles.container}>
       {/* System Active badge */}
@@ -35,10 +38,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onRefresh }) => {
       </View>
 
       {/* Text content */}
-      <Text style={styles.title}>No new alerts today</Text>
+      <Text style={styles.title}>{t('alerts_empty_title')}</Text>
       <Text style={styles.subtitle}>
-        The sea is calm. We'll notify you if any{'\n'}official advisories are
-        issued.
+        {t('alerts_empty_subtitle')}
       </Text>
 
       {/* Refresh button */}
@@ -49,7 +51,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onRefresh }) => {
         <Icon name="refresh" size={24} color={Colors.primaryAccent} />
       </TouchableOpacity>
       <TouchableOpacity onPress={onRefresh} activeOpacity={0.7}>
-        <Text style={styles.checkText}>CHECK FOR UPDATES</Text>
+        <Text style={styles.checkText}>{t('alerts_empty_refresh_btn')}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -54,11 +54,11 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               <View style={styles.iconContainer}>
                 <Icon
                   name={action.icon}
-                  size={28}
+                  size={20}
                   color={Colors.primaryAccent}
                 />
               </View>
-              <Text style={styles.label}>{displayLabel}</Text>
+              <Text style={styles.label} numberOfLines={1}>{displayLabel}</Text>
             </TouchableOpacity>
           );
         })}
@@ -70,38 +70,44 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.xxl,
-    marginBottom: Spacing.xxxl,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.md,
+    gap: Spacing.sm,
+    justifyContent: 'space-between',
   },
   card: {
-    width: '47%',
-    backgroundColor: Colors.cardBackground,
+    width: '48.5%',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    paddingVertical: Spacing.sm + 4,
+    paddingHorizontal: Spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.card,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
+    width: 38,
+    height: 38,
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primaryAccentLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: 5,
   },
   label: {
     ...Typography.label,
+    fontSize: 12,
     color: Colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
   },
 });
 
 export default QuickActions;
+

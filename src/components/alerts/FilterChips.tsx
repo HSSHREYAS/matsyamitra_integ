@@ -12,10 +12,15 @@ import {
 } from 'react-native';
 import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
 
+export interface FilterItem {
+  key: string;
+  label: string;
+}
+
 interface FilterChipsProps {
-  filters: string[];
+  filters: (string | FilterItem)[];
   activeFilter: string;
-  onFilterChange: (filter: string) => void;
+  onFilterChange: (filterKey: string) => void;
 }
 
 const FilterChips: React.FC<FilterChipsProps> = ({
@@ -30,19 +35,21 @@ const FilterChips: React.FC<FilterChipsProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
         {filters.map((filter) => {
-          const isActive = filter === activeFilter;
+          const key = typeof filter === 'string' ? filter : filter.key;
+          const label = typeof filter === 'string' ? filter : filter.label;
+          const isActive = key.toLowerCase() === activeFilter.toLowerCase();
           return (
             <TouchableOpacity
-              key={filter}
+              key={key}
               style={[styles.chip, isActive && styles.chipActive]}
-              onPress={() => onFilterChange(filter)}
+              onPress={() => onFilterChange(key)}
               activeOpacity={0.7}>
               <Text
                 style={[
                   styles.chipText,
                   isActive && styles.chipTextActive,
                 ]}>
-                {filter}
+                {label}
               </Text>
             </TouchableOpacity>
           );

@@ -1,11 +1,11 @@
 /**
- * LocationRow — Displays current location with dropdown
+ * LocationRow — Displays current location in a crisp white rounded card
  */
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing } from '../../theme';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 
 interface LocationRowProps {
   location: string;
@@ -14,56 +14,64 @@ interface LocationRowProps {
 
 const LocationRow: React.FC<LocationRowProps> = ({ location, onPress }) => {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={styles.container}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={`Current location: ${location}. Tap to change coastal location`}>
-      <View style={styles.pill}>
-        <Icon name="map-marker" size={18} color={Colors.primaryAccent} />
-        <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
-          {location}
-        </Text>
+    <View style={styles.container}>
+      <TouchableOpacity
+        onPress={onPress}
+        style={styles.pill}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel={`Current location: ${location}. Tap to change coastal location`}>
+        <View style={styles.leftRow}>
+          <Icon name="map-marker" size={18} color={Colors.oceanBlue} />
+          <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+            {location}
+          </Text>
+        </View>
         <Icon
-          name="chevron-down"
-          size={18}
-          color={Colors.primaryAccent}
+          name="chevron-right"
+          size={20}
+          color={Colors.textMuted}
           style={styles.chevronIcon}
         />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
+    marginBottom: Spacing.sm + 2,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingVertical: 6,
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
     paddingHorizontal: Spacing.md,
-    borderRadius: 20,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    gap: Spacing.xs,
+    borderColor: Colors.borderLight,
+    ...Shadows.card,
+  },
+  leftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flex: 1,
   },
   locationText: {
     ...Typography.body,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textOnDark,
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: Colors.textPrimary,
     flexShrink: 1,
   },
   chevronIcon: {
-    marginLeft: 2,
+    marginLeft: Spacing.xs,
   },
 });
 
 export default LocationRow;
+

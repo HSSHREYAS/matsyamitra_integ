@@ -1,6 +1,6 @@
 /**
- * HomeScreen — Main dashboard with live weather telemetry, INCOIS advisories, and quick actions.
- * Connected exclusively to live MatsyaMitra REST API.
+ * HomeScreen — Main dashboard with live weather telemetry, INCOIS advisories, greeting hero, and quick actions.
+ * Connected exclusively to live MatsyaMitra REST API with light coastal aesthetic.
  */
 
 import React, { useState, useMemo } from 'react';
@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, StatusBar, RefreshControl, View, Text } from 'r
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../theme';
 import TopBar from '../components/home/TopBar';
+import GreetingBanner from '../components/home/GreetingBanner';
 import LocationRow from '../components/home/LocationRow';
 import LocationSelectorModal from '../components/home/LocationSelectorModal';
 import WeatherCard from '../components/home/WeatherCard';
@@ -86,6 +87,8 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.primaryBackground} />
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -98,17 +101,18 @@ const HomeScreen: React.FC = () => {
             colors={[Colors.primaryAccent]}
           />
         }>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBackground} />
-
-        {/* Top Bar */}
-        <TopBar onMenuPress={() => {}} />
+        {/* Top Bar with Brand, Subtitle & Language Toggle */}
+        <TopBar
+          onMenuPress={() => {}}
+          onNotificationPress={() => {}}
+        />
 
         {/* Connectivity Status Banner */}
         <View style={styles.statusRow}>
           <View
             style={[
               styles.statusDot,
-              { backgroundColor: isStateOnline ? Colors.safe : Colors.textSubtleOnDark },
+              { backgroundColor: isStateOnline ? Colors.safe : Colors.textMuted },
             ]}
           />
           <Text style={styles.statusText}>
@@ -116,15 +120,18 @@ const HomeScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Location */}
+        {/* Greeting & Sunrise Hero Card */}
+        <GreetingBanner />
+
+        {/* Location Selector Pill */}
         <LocationRow location={currentLocationLabel} onPress={handleLocationPress} />
 
-        {/* Hero Weather Card or Offline State */}
+        {/* Current Conditions Weather Card */}
         {weatherData ? (
           <WeatherCard weather={weatherData} />
         ) : (
           <View style={styles.unavailableCard}>
-            <Icon name="cloud-off-outline" size={36} color={Colors.textSubtleOnDark} />
+            <Icon name="cloud-off-outline" size={36} color={Colors.textMuted} />
             <Text style={styles.unavailableTitle}>{t('offline_cached')}</Text>
             <Text style={styles.unavailableSubtitle}>
               {isStateLoading
@@ -134,7 +141,7 @@ const HomeScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Fishing Advisory or Unavailable State */}
+        {/* Today's Fishing Advisory */}
         {activeAdvisories.length > 0 ? (
           <FishingAdvisory
             advisories={activeAdvisories}
@@ -146,7 +153,7 @@ const HomeScreen: React.FC = () => {
               <Text style={styles.sectionTitle}>{t('advisory_title')}</Text>
             </View>
             <View style={styles.advisoryUnavailableCard}>
-              <Icon name="information-outline" size={24} color={Colors.textSubtleOnDark} />
+              <Icon name="information-outline" size={24} color={Colors.textMuted} />
               <Text style={styles.advisoryUnavailableText}>
                 {isAdvLoading ? t('advisory_loading') : t('advisory_none_active')}
               </Text>
@@ -154,7 +161,7 @@ const HomeScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Quick Actions */}
+        {/* Quick Actions (Fleet Tracking, Catch Logs, Distress Alerts, Equipment) */}
         <QuickActions
           onActionPress={(actionId) => {
             if (actionId === 'catch' || actionId === 'distress' || actionId === 'equipment' || actionId === 'fleet') {
@@ -225,14 +232,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryBackground,
   },
   contentContainer: {
-    paddingBottom: Spacing.massive + 20,
+    paddingBottom: 24,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xs,
+    paddingBottom: 4,
   },
   statusDot: {
     width: 6,
@@ -241,64 +248,71 @@ const styles = StyleSheet.create({
   },
   statusText: {
     ...Typography.micro,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
+    fontSize: 9.5,
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   unavailableCard: {
     marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.secondaryBackground,
-    borderRadius: BorderRadius.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    ...Shadows.cardHeavy,
+    borderColor: Colors.borderLight,
+    ...Shadows.card,
+    marginBottom: Spacing.sm,
   },
   unavailableTitle: {
     ...Typography.body,
     fontWeight: '700',
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
   },
   unavailableSubtitle: {
     ...Typography.bodySmall,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
   },
   advisoryUnavailableContainer: {
     paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.xxl,
+    marginBottom: Spacing.sm,
   },
   advisoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs + 2,
   },
   sectionTitle: {
     ...Typography.sectionTitle,
-    color: Colors.textOnDark,
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   advisoryUnavailableCard: {
-    backgroundColor: Colors.secondaryBackground,
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.borderLight,
+    ...Shadows.card,
   },
   advisoryUnavailableText: {
     ...Typography.bodySmall,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     flex: 1,
     lineHeight: 18,
   },
 });
 
 export default HomeScreen;
+
 

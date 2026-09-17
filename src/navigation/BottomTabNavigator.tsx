@@ -40,7 +40,7 @@ const BottomTabNavigator: React.FC = () => {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.primaryAccent,
-        tabBarInactiveTintColor: Colors.textSubtleOnDark,
+        tabBarInactiveTintColor: Colors.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
       }}>
       {tabConfig.map((tab) => (
@@ -50,11 +50,13 @@ const BottomTabNavigator: React.FC = () => {
           component={tab.component}
           options={{
             tabBarLabel: t(tab.labelKey),
-            tabBarIcon: ({ focused, color, size }) => (
-              <View style={focused ? styles.activeIconContainer : undefined}>
+            tabBarBadge: tab.name === 'Alerts' ? 3 : undefined,
+            tabBarBadgeStyle: styles.badge,
+            tabBarIcon: ({ focused, color }) => (
+              <View style={focused ? styles.activeIconContainer : styles.iconContainer}>
                 <Icon
                   name={focused ? tab.icon : tab.iconOutline}
-                  size={24}
+                  size={22}
                   color={color}
                 />
               </View>
@@ -68,26 +70,45 @@ const BottomTabNavigator: React.FC = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.primaryBackground,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    height: Layout.bottomTabHeight + 10,
-    paddingBottom: 8,
-    paddingTop: 8,
-    elevation: 0,
+    borderTopColor: Colors.borderLight,
+    height: Layout.bottomTabHeight + 8,
+    paddingBottom: 6,
+    paddingTop: 6,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
   tabLabel: {
     ...Typography.chip,
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 10.5,
+    fontWeight: '700',
     marginTop: 2,
   },
+  iconContainer: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
   activeIconContainer: {
-    backgroundColor: 'rgba(15, 166, 136, 0.1)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(15, 166, 136, 0.12)',
+    borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 2,
+  },
+  badge: {
+    backgroundColor: Colors.danger,
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    lineHeight: 15,
   },
 });
 
 export default BottomTabNavigator;
+
