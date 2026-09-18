@@ -181,6 +181,26 @@ class ApiEndpointsTests(unittest.TestCase):
         self.assertEqual(advisory_alert["city_name"], "Karwar")
         self.assertIn("Karwar", advisory_alert["title"])
 
+    def test_pipeline_status_endpoint(self):
+        response = self.client.get("/api/v1/pipeline/status")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("scheduler_running", data)
+        self.assertIn("jobs", data)
+        self.assertIn("timestamp", data)
+
+    def test_pipeline_trigger_endpoint(self):
+        response = self.client.post("/api/v1/pipeline/trigger?job=incois")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "triggered")
+        self.assertEqual(data["job"], "incois_sync")
+
+        # Test invalid job
+        response_invalid = self.client.post("/api/v1/pipeline/trigger?job=nonexistent")
+        self.assertEqual(response_invalid.status_code, 200)
+        self.assertEqual(response_invalid.json()["status"], "error")
+
 
 if __name__ == "__main__":
     unittest.main()

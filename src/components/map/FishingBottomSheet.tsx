@@ -10,6 +10,7 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme'
 import Badge from '../common/Badge';
 import type { FishingZone } from '../../data/mockZones';
 import { mapCoverage } from '../../data/mockZones';
+import { getCompassHeading } from '../../services/api/transformers';
 
 interface FishingBottomSheetProps {
   selectedZone?: FishingZone | null;
@@ -116,6 +117,69 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
                 />
               </View>
             </View>
+
+            {/* INCOIS Navigation Vector Card */}
+            {selectedZone.navigationVector && (
+              <View style={styles.navCard}>
+                <View style={styles.navHeader}>
+                  <View style={styles.navHeaderLeft}>
+                    <Icon name="compass" size={18} color={Colors.oceanBlue} />
+                    <Text style={styles.navHeaderTitle}>INCOIS NAVIGATION HEADING</Text>
+                  </View>
+                  <View style={styles.portPill}>
+                    <Icon name="anchor" size={12} color={Colors.textPrimary} />
+                    <Text style={styles.portPillText}>{selectedZone.navigationVector.originPortName}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.navGrid}>
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>BEARING</Text>
+                    <Text style={styles.navMetricVal}>
+                      {selectedZone.navigationVector.bearingDegrees.toFixed(0)}° {getCompassHeading(selectedZone.navigationVector.bearingDegrees)}
+                    </Text>
+                  </View>
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>DISTANCE</Text>
+                    <Text style={styles.navMetricVal}>
+                      {selectedZone.navigationVector.distanceKm.toFixed(1)} km
+                    </Text>
+                    <Text style={styles.navMetricSub}>
+                      ({(selectedZone.navigationVector.distanceKm / 1.852).toFixed(1)} NM)
+                    </Text>
+                  </View>
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>SEA DEPTH</Text>
+                    <Text style={styles.navMetricVal}>
+                      {selectedZone.navigationVector.depthM.toFixed(0)} m
+                    </Text>
+                    <Text style={styles.navMetricSub}>Bathymetric</Text>
+                  </View>
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>EST. TRANSIT</Text>
+                    <Text style={styles.navMetricVal}>
+                      ~{(selectedZone.navigationVector.distanceKm / 20).toFixed(1)} hrs
+                    </Text>
+                    <Text style={styles.navMetricSub}>@ 11 knots</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Target Species */}
+            {selectedZone.species && selectedZone.species.length > 0 && (
+              <View style={styles.speciesContainer}>
+                <Text style={styles.speciesTitle}>TARGET SPECIES IN ZONE</Text>
+                <View style={styles.speciesChips}>
+                  {selectedZone.species.map((sp, idx) => (
+                    <View key={idx} style={styles.speciesChip}>
+                      <Icon name="fish" size={13} color={Colors.primaryAccentDark} />
+                      <Text style={styles.speciesChipText}>{sp}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
 
             {/* Fishing Intelligence */}
             <View style={styles.intelligenceCard}>
@@ -276,9 +340,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   intelligenceCard: {
-    backgroundColor: Colors.primaryBackground,
+    backgroundColor: '#F8FAFC',
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    marginBottom: Spacing.xl,
   },
   intelligenceHeader: {
     flexDirection: 'row',
@@ -293,9 +360,116 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   intelligenceText: {
-    ...Typography.body,
-    color: Colors.textSubtleOnDark,
-    lineHeight: 22,
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  navCard: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    marginBottom: Spacing.lg,
+  },
+  navHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  navHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  navHeaderTitle: {
+    ...Typography.chip,
+    color: Colors.oceanBlue,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  portPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.pill,
+    gap: 4,
+  },
+  portPillText: {
+    ...Typography.micro,
+    color: Colors.textPrimary,
+    fontWeight: '700',
+  },
+  navGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
+    marginTop: Spacing.xs,
+  },
+  navMetric: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  navMetricLabel: {
+    ...Typography.micro,
+    color: Colors.textSecondary,
+    fontSize: 9,
+    fontWeight: '600',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  navMetricVal: {
+    ...Typography.label,
+    color: Colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  navMetricSub: {
+    ...Typography.micro,
+    color: Colors.textMuted,
+    fontSize: 9,
+    marginTop: 2,
+  },
+  speciesContainer: {
+    marginBottom: Spacing.lg,
+  },
+  speciesTitle: {
+    ...Typography.micro,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: Spacing.xs,
+    letterSpacing: 0.5,
+  },
+  speciesChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  speciesChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5F2',
+    borderWidth: 1,
+    borderColor: '#D1E7E0',
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  speciesChipText: {
+    ...Typography.bodySmall,
+    color: Colors.primaryAccentDark,
+    fontWeight: '600',
   },
 });
 

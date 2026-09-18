@@ -3,7 +3,7 @@
  * live GEE satellite telemetry, INCOIS advisories, view on map, and 2x2 quick actions.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -31,6 +31,7 @@ import {
   getCanonicalCityName,
 } from '../services/api';
 import { useLanguage } from '../i18n';
+import { getUserProfile } from '../services/storage/userProfileStorage';
 
 interface HomeScreenProps {
   navigation?: any;
@@ -50,6 +51,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     refresh: refreshCurrentState,
     selectLocation,
   } = useCurrentState('KARN_001');
+
+  // Synchronize default location from saved profile on mount and on tab focus
+  useEffect(() => {
+    const syncProfilePort = () => {
+      getUserProfile().then((profile) => {
+        if (profile?.defaultPortId) {
+          selectLocation(profile.defaultPortId);
+        }
+      });
+    };
+
+    syncProfilePort();
+    const unsubscribe = navigation?.addListener?.('focus', syncProfilePort);
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [navigation, selectLocation]);
 
   const {
     advisories: liveAdvisories,

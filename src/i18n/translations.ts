@@ -177,6 +177,34 @@ export interface Translations {
   alerts_empty_subtitle: string;
   alerts_empty_refresh_btn: string;
 
+  // Profile & Vessel Settings
+  profile_title: string;
+  profile_fisher_verified: string;
+  profile_stat_trips: string;
+  profile_stat_exp: string;
+  profile_stat_rating: string;
+  profile_vessel_info: string;
+  profile_vessel_name: string;
+  profile_reg_number: string;
+  profile_vessel_type: string;
+  profile_location_settings: string;
+  profile_default_port: string;
+  profile_coverage_area: string;
+  profile_karnataka_coast: string;
+  profile_language_title: string;
+  profile_notifications_title: string;
+  profile_push_notifications: string;
+  profile_weather_alerts: string;
+  profile_edit_vessel: string;
+  profile_btn_save: string;
+  profile_save_success: string;
+  profile_select_port: string;
+  vessel_traditional_canoe: string;
+  vessel_motorized_craft: string;
+  vessel_mechanized_trawler: string;
+  vessel_purse_seiner: string;
+  vessel_gillnetter: string;
+
   // General Actions
   btn_close: string;
   btn_cancel: string;
@@ -344,6 +372,33 @@ export const translations: Record<Language, Translations> = {
     alerts_empty_subtitle: "The sea is calm. We'll notify you if any official advisories are issued.",
     alerts_empty_refresh_btn: 'CHECK FOR UPDATES',
 
+    profile_title: 'Profile & Vessel Settings',
+    profile_fisher_verified: 'Verified Fisher ID',
+    profile_stat_trips: 'Trips',
+    profile_stat_exp: 'Years Exp.',
+    profile_stat_rating: 'Rating',
+    profile_vessel_info: 'Vessel Information',
+    profile_vessel_name: 'Vessel Name',
+    profile_reg_number: 'Registration',
+    profile_vessel_type: 'Vessel Type',
+    profile_location_settings: 'Location Settings',
+    profile_default_port: 'Default Home Port',
+    profile_coverage_area: 'Coverage Area',
+    profile_karnataka_coast: 'Karnataka Coast',
+    profile_language_title: 'Language',
+    profile_notifications_title: 'Notifications',
+    profile_push_notifications: 'Push Notifications',
+    profile_weather_alerts: 'Marine Weather Alerts',
+    profile_edit_vessel: 'Edit Vessel Details',
+    profile_btn_save: 'Save Profile',
+    profile_save_success: 'Profile & vessel settings saved successfully!',
+    profile_select_port: 'Select Default Home Port',
+    vessel_traditional_canoe: 'Traditional Canoe',
+    vessel_motorized_craft: 'Motorized Craft (OBM)',
+    vessel_mechanized_trawler: 'Mechanized Trawler',
+    vessel_purse_seiner: 'Purse Seiner',
+    vessel_gillnetter: 'Gillnetter',
+
     btn_close: 'Close',
     btn_cancel: 'Cancel',
     btn_confirm: 'Confirm',
@@ -508,6 +563,33 @@ export const translations: Record<Language, Translations> = {
     alerts_empty_title: 'ಇಂದು ಯಾವುದೇ ಹೊಸ ಎಚ್ಚರಿಕೆಗಳಿಲ್ಲ',
     alerts_empty_subtitle: 'ಸಮುದ್ರ ಶಾಂತವಾಗಿದೆ. ಅಧಿಕೃತ ಮಾಹಿತಿ ಅಥವಾ ಹೊಸ ಎಚ್ಚರಿಕೆ ಬಂದರೆ ತಕ್ಷಣ ಇಲ್ಲಿ ತಿಳಿಸಲಾಗುವುದು.',
     alerts_empty_refresh_btn: 'ಹೊಸ ಮಾಹಿತಿ ಪರಿಶೀಲಿಸಿ',
+
+    profile_title: 'ಪ್ರೊಫೈಲ್ & ದೋಣಿ ಮಾಹಿತಿ',
+    profile_fisher_verified: 'ದೃಢೀಕೃತ ಮೀನುಗಾರ ಐಡಿ',
+    profile_stat_trips: 'ಪ್ರಯಾಣಗಳು',
+    profile_stat_exp: 'ವರ್ಷಗಳ ಅನುಭವ',
+    profile_stat_rating: 'ಶ್ರೇಯಾಂಕ',
+    profile_vessel_info: 'ದೋಣಿಯ ವಿವರಗಳು',
+    profile_vessel_name: 'ದೋಣಿಯ ಹೆಸರು',
+    profile_reg_number: 'ನೋಂದಣಿ ಸಂಖ್ಯೆ',
+    profile_vessel_type: 'ದೋಣಿಯ ಪ್ರಕಾರ',
+    profile_location_settings: 'ಸ್ಥಳ ಮತ್ತು ಬಂದರು',
+    profile_default_port: 'ಮುಖ್ಯ ತವರು ಬಂದರು',
+    profile_coverage_area: 'ವ್ಯಾಪ್ತಿ ಪ್ರದೇಶ',
+    profile_karnataka_coast: 'ಕರ್ನಾಟಕ ಕರಾವಳಿ ತೀರ',
+    profile_language_title: 'ಭಾಷೆ (Language)',
+    profile_notifications_title: 'ಅಲರ್ಟ್ ಸೂಚನೆಗಳು',
+    profile_push_notifications: 'ಮೊಬೈಲ್ ನೋಟಿಫಿಕೇಶನ್‌ಗಳು',
+    profile_weather_alerts: 'ಕಡಲ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆಗಳು',
+    profile_edit_vessel: 'ದೋಣಿ ವಿವರ ಬದಲಾಯಿಸಿ',
+    profile_btn_save: 'ಉಳಿಸಿ',
+    profile_save_success: 'ದೋಣಿ ಮತ್ತು ಬಂದರಿನ ವಿವರಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!',
+    profile_select_port: 'ಮುಖ್ಯ ತವರು ಬಂದರು ಆಯ್ಕೆಮಾಡಿ',
+    vessel_traditional_canoe: 'ಸಾಂಪ್ರದಾಯಿಕ ದೋಣಿ (Canoe)',
+    vessel_motorized_craft: 'ಮೋಟಾರ್ ದೋಣಿ (OBM Craft)',
+    vessel_mechanized_trawler: 'ಮೆಕನೈಸ್ಡ್ ಟ್ರಾಲರ್ (Trawler)',
+    vessel_purse_seiner: 'ಪರ್ಸಿನ್ ದೋಣಿ (Purse Seiner)',
+    vessel_gillnetter: 'ಗಿಲ್‌ನೆಟ್ ದೋಣಿ (Gillnetter)',
 
     btn_close: 'ಮುಚ್ಚಿ',
     btn_cancel: 'ರದ್ದು',

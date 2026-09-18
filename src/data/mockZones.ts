@@ -3,6 +3,14 @@
  * Coordinates along Karnataka coast (~12°N–15°N, 74°E–77°E)
  */
 
+export interface NavigationVector {
+  originPortName: string;
+  originPortCoordinates: { latitude: number; longitude: number };
+  bearingDegrees: number;
+  distanceKm: number;
+  depthM: number;
+}
+
 export interface FishingZone {
   id: string;
   name: string;
@@ -17,6 +25,7 @@ export interface FishingZone {
   center: { latitude: number; longitude: number };
   fishingIntelligence: string;
   species: string[];
+  navigationVector?: NavigationVector;
 }
 
 export interface RiskZone {
@@ -146,10 +155,10 @@ export const mapCoverage = {
 };
 
 export const mapInitialRegion = {
-  latitude: 13.0,
-  longitude: 74.8,
-  latitudeDelta: 2.5,
-  longitudeDelta: 2.0,
+  latitude: 13.90,
+  longitude: 73.90,
+  latitudeDelta: 2.2,
+  longitudeDelta: 2.2,
 };
 
 export default { mockFishingZones, mockRiskZones, mapCoverage, mapInitialRegion };

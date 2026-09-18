@@ -1,17 +1,17 @@
 /**
  * MapScreen — Marine Navigation with Fishing/Risk zone toggle
- * Connected to live MatsyaMitra 25 canonical locations telemetry.
+ * Connected to live MatsyaMitra 25 canonical locations telemetry & INCOIS PFZ advisories.
  */
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import ZoneToggle from '../components/map/ZoneToggle';
 import MapControls from '../components/map/MapControls';
-import FishingZoneOverlay from '../components/map/FishingZoneOverlay';
-import RiskZoneOverlay from '../components/map/RiskZoneOverlay';
+import { renderFishingZoneElements } from '../components/map/FishingZoneOverlay';
+import { renderRiskZoneElements } from '../components/map/RiskZoneOverlay';
 import FishingBottomSheet from '../components/map/FishingBottomSheet';
 import RiskBottomSheet from '../components/map/RiskBottomSheet';
 import {
@@ -21,10 +21,15 @@ import {
 import type { FishingZone, RiskZone } from '../data/mockZones';
 import {
   useCurrentState,
+  useAdvisories,
+  transformIncoisToFishingZones,
   transformCurrentStatesToFishingZones,
   transformCurrentStatesToRiskZones,
+  getLandingCenterCoordinates,
 } from '../services/api';
+import { getUserProfile, type UserProfile } from '../services/storage/userProfileStorage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
 
 const ZOOM_STEP = 0.5;
 const MIN_DELTA = 0.02;
@@ -32,20 +37,50 @@ const MAX_LATITUDE_DELTA = 30;
 const MAX_LONGITUDE_DELTA = 30;
 
 const MapScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const [activeMode, setActiveMode] = useState(0); // 0 = Fishing, 1 = Risk
   const [region, setRegion] = useState<Region>(mapInitialRegion);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const mapRef = useRef<MapView>(null);
 
-  // Live telemetry hook
-  const { states, isOnline, refresh } = useCurrentState('KARN_001');
+  // Live telemetry hook (25 canonical locations)
+  const { states, isOnline: statesOnline, refresh: refreshStates } = useCurrentState('KARN_001');
 
-  // Compute live fishing zones from 25 canonical points
+  // Live INCOIS Advisories hook (29 real PFZ advisories)
+  const { rawAdvisories, isOnline: advisoriesOnline, refresh: refreshAdvisories } = useAdvisories();
+
+  const isOnline = statesOnline || advisoriesOnline;
+
+  // Load and synchronize user profile on mount and focus
+  const loadProfile = useCallback(async () => {
+    try {
+      const p = await getUserProfile();
+      setUserProfile(p);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadProfile();
+      refreshStates();
+      refreshAdvisories();
+    });
+    return unsubscribe;
+  }, [navigation, loadProfile, refreshStates, refreshAdvisories]);
+
+  // Compute live fishing zones with real INCOIS navigation vectors
   const fishingZones = useMemo<FishingZone[]>(() => {
+    if (rawAdvisories && rawAdvisories.length > 0) {
+      return transformIncoisToFishingZones(rawAdvisories, states || undefined);
+    }
     if (states && states.length > 0) {
       return transformCurrentStatesToFishingZones(states);
     }
     return [];
-  }, [states]);
+  }, [rawAdvisories, states]);
 
   // Compute live risk zones from 25 canonical points (or fallback)
   const riskZones = useMemo<RiskZone[]>(() => {
@@ -59,17 +94,38 @@ const MapScreen: React.FC = () => {
   const [selectedFishingZone, setSelectedFishingZone] = useState<FishingZone | null>(null);
   const [selectedRiskZone, setSelectedRiskZone] = useState<RiskZone | null>(null);
 
+  // Auto-select initial zone: prefer zone nearest to user's default port
   useEffect(() => {
     if (fishingZones.length > 0) {
       if (!selectedFishingZone || !fishingZones.some((z) => z.id === selectedFishingZone.id)) {
-        setSelectedFishingZone(fishingZones[0]);
+        const homePortName = userProfile?.defaultPortName?.toLowerCase();
+        const preferredZone = homePortName
+          ? fishingZones.find((z) =>
+              z.navigationVector?.originPortName.toLowerCase().includes(homePortName) ||
+              z.name.toLowerCase().includes(homePortName)
+            )
+          : null;
+
+        setSelectedFishingZone(preferredZone || fishingZones[0]);
       }
     } else {
       setSelectedFishingZone(null);
     }
-  }, [fishingZones, selectedFishingZone]);
+  }, [fishingZones, selectedFishingZone, userProfile]);
 
-  const handleZoomIn = () => {
+  const handleZoomIn = async () => {
+    try {
+      const camera = await mapRef.current?.getCamera();
+      if (camera && typeof camera.zoom === 'number') {
+        mapRef.current?.animateCamera(
+          { zoom: Math.min(camera.zoom + 1, 19) },
+          { duration: 250 }
+        );
+        return;
+      }
+    } catch {
+      // fallback to region calculation
+    }
     const nextRegion = {
       ...region,
       latitudeDelta: Math.max(region.latitudeDelta * ZOOM_STEP, MIN_DELTA),
@@ -79,7 +135,19 @@ const MapScreen: React.FC = () => {
     mapRef.current?.animateToRegion(nextRegion, 250);
   };
 
-  const handleZoomOut = () => {
+  const handleZoomOut = async () => {
+    try {
+      const camera = await mapRef.current?.getCamera();
+      if (camera && typeof camera.zoom === 'number') {
+        mapRef.current?.animateCamera(
+          { zoom: Math.max(camera.zoom - 1, 4) },
+          { duration: 250 }
+        );
+        return;
+      }
+    } catch {
+      // fallback to region calculation
+    }
     const nextRegion = {
       ...region,
       latitudeDelta: Math.min(region.latitudeDelta / ZOOM_STEP, MAX_LATITUDE_DELTA),
@@ -90,40 +158,82 @@ const MapScreen: React.FC = () => {
   };
 
   const handleMyLocation = () => {
+    if (userProfile?.defaultPortName) {
+      const coords = getLandingCenterCoordinates(userProfile.defaultPortName);
+      const targetRegion = {
+        latitude: coords.latitude,
+        longitude: coords.longitude - 0.2, // Offset offshore to view vectors
+        latitudeDelta: 1.2,
+        longitudeDelta: 1.2,
+      };
+      setRegion(targetRegion);
+      mapRef.current?.animateToRegion(targetRegion, 500);
+      return;
+    }
     setRegion(mapInitialRegion);
     mapRef.current?.animateToRegion(mapInitialRegion, 500);
   };
 
   const handleFishingZonePress = useCallback((zone: FishingZone) => {
     setSelectedFishingZone(zone);
+    if (zone.navigationVector) {
+      const midLat = (zone.navigationVector.originPortCoordinates.latitude + zone.center.latitude) / 2;
+      const midLon = (zone.navigationVector.originPortCoordinates.longitude + zone.center.longitude) / 2;
+      const latDiff = Math.abs(zone.navigationVector.originPortCoordinates.latitude - zone.center.latitude);
+      const lonDiff = Math.abs(zone.navigationVector.originPortCoordinates.longitude - zone.center.longitude);
+      mapRef.current?.animateToRegion({
+        latitude: midLat,
+        longitude: midLon,
+        latitudeDelta: Math.max(0.9, latDiff * 1.8),
+        longitudeDelta: Math.max(0.9, lonDiff * 1.8),
+      }, 450);
+    } else {
+      mapRef.current?.animateToRegion({
+        latitude: zone.center.latitude,
+        longitude: zone.center.longitude,
+        latitudeDelta: 0.8,
+        longitudeDelta: 0.8,
+      }, 450);
+    }
   }, []);
 
   const handleRiskZonePress = useCallback((zone: RiskZone) => {
     setSelectedRiskZone(zone);
   }, []);
 
+  const handleRefresh = async () => {
+    await Promise.all([refreshStates(), refreshAdvisories(), loadProfile()]);
+  };
+
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBackground} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.cardBackground} />
 
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <Icon name="menu" size={24} color={Colors.textOnDark} />
+        <View style={styles.leftAction}>
+          <Icon name="navigation-variant" size={24} color={Colors.primaryAccent} />
+        </View>
         <View style={styles.titleContainer}>
           <Text style={styles.topBarTitle}>Marine Navigation</Text>
           <View style={styles.subStatusRow}>
             <View
               style={[
                 styles.liveDot,
-                { backgroundColor: isOnline ? Colors.safe : Colors.textSubtleOnDark },
+                { backgroundColor: isOnline ? Colors.safe : Colors.caution },
               ]}
             />
             <Text style={styles.subStatusText}>
-              {isOnline ? '25 Canonical Points Active' : 'Offline / Mock Data'}
+              {fishingZones.length > 0
+                ? `${fishingZones.length} INCOIS PFZs Active`
+                : isOnline
+                ? '25 Canonical Stations Online'
+                : 'Offline / Cached Mode'}
+              {userProfile?.defaultPortName ? ` • ${userProfile.defaultPortName}` : ''}
             </Text>
           </View>
         </View>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => refresh()}>
+        <TouchableOpacity activeOpacity={0.7} onPress={handleRefresh} style={styles.refreshButton}>
           <Icon name="refresh" size={22} color={Colors.primaryAccent} />
         </TouchableOpacity>
       </View>
@@ -136,20 +246,27 @@ const MapScreen: React.FC = () => {
           initialRegion={mapInitialRegion}
           mapType="standard"
           toolbarEnabled={false}
-          rotateEnabled={false}
+          zoomEnabled={true}
+          zoomControlEnabled={false}
+          zoomTapEnabled={true}
+          scrollEnabled={true}
+          pitchEnabled={true}
+          rotateEnabled={true}
+          scrollDuringRotateOrZoomEnabled={true}
+          showsScale={true}
+          showsCompass={true}
+          minZoomLevel={4}
+          maxZoomLevel={19}
+          moveOnMarkerPress={false}
           onRegionChangeComplete={setRegion}>
-          {activeMode === 0 && (
-            <FishingZoneOverlay
-              zones={fishingZones}
-              onZonePress={handleFishingZonePress}
-            />
-          )}
-          {activeMode === 1 && (
-            <RiskZoneOverlay
-              zones={riskZones}
-              onZonePress={handleRiskZonePress}
-            />
-          )}
+          {activeMode === 0 &&
+            renderFishingZoneElements(
+              fishingZones,
+              selectedFishingZone?.id,
+              handleFishingZonePress
+            )}
+          {activeMode === 1 &&
+            renderRiskZoneElements(riskZones, handleRiskZonePress)}
         </MapView>
 
         {/* Zone Toggle */}
@@ -170,7 +287,7 @@ const MapScreen: React.FC = () => {
               <Text style={styles.emptyPfzTitle}>PFZ TELEMETRY PENDING</Text>
             </View>
             <Text style={styles.emptyPfzText}>
-              PFZ data currently unavailable. Live fishing-zone data will appear when satellite/PFZ processing is available.
+              Connecting to INCOIS advisory server... Live fishing-zone vectors will appear once synchronized.
             </Text>
           </View>
         )}
@@ -187,15 +304,15 @@ const MapScreen: React.FC = () => {
             <View style={styles.legendItems}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: Colors.danger }]} />
-                <Text style={styles.legendItemText}>Critical</Text>
+                <Text style={styles.legendItemText}>Critical Wave Hazards</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: Colors.caution }]} />
-                <Text style={styles.legendItemText}>Moderate</Text>
+                <Text style={styles.legendItemText}>Moderate Swell</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: Colors.safe }]} />
-                <Text style={styles.legendItemText}>Optimal Path</Text>
+                <Text style={styles.legendItemText}>Optimal Marine Conditions</Text>
               </View>
             </View>
           </View>
@@ -224,15 +341,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     paddingTop: Spacing.xl,
-    backgroundColor: Colors.primaryBackground,
+    backgroundColor: Colors.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
     zIndex: 20,
+    ...Shadows.card,
+  },
+  leftAction: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.primaryAccentLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleContainer: {
     alignItems: 'center',
   },
   topBarTitle: {
     ...Typography.screenTitle,
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
   subStatusRow: {
     flexDirection: 'row',
@@ -241,13 +369,22 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
   subStatusText: {
     ...Typography.micro,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  refreshButton: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mapContainer: {
     flex: 1,
@@ -261,12 +398,15 @@ const styles = StyleSheet.create({
     top: 90,
     left: Spacing.lg,
     right: Spacing.lg,
-    backgroundColor: 'rgba(10, 22, 40, 0.94)',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     borderLeftWidth: 4,
     borderLeftColor: Colors.primaryAccent,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     zIndex: 10,
+    ...Shadows.card,
   },
   emptyPfzHeader: {
     flexDirection: 'row',
@@ -282,18 +422,21 @@ const styles = StyleSheet.create({
   },
   emptyPfzText: {
     ...Typography.bodySmall,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     lineHeight: 18,
   },
   legendCard: {
     position: 'absolute',
-    top: 100,
+    top: 90,
     left: Spacing.lg,
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    minWidth: 160,
+    minWidth: 175,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     zIndex: 10,
+    ...Shadows.card,
   },
   legendHeader: {
     flexDirection: 'row',
@@ -309,17 +452,18 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     ...Typography.micro,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
+    fontWeight: '700',
   },
   legendTitle: {
     ...Typography.cardTitle,
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   legendSubtitle: {
     ...Typography.chip,
-    color: Colors.textSubtleOnDark,
+    color: Colors.textSecondary,
     marginBottom: Spacing.sm,
   },
   legendItems: {
@@ -337,7 +481,7 @@ const styles = StyleSheet.create({
   },
   legendItemText: {
     ...Typography.chip,
-    color: Colors.textOnDark,
+    color: Colors.textPrimary,
   },
 });
 

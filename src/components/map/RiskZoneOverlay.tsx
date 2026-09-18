@@ -20,50 +20,60 @@ const riskColors = {
   low: { fill: 'rgba(15, 166, 136, 0.15)', stroke: Colors.safe },
 };
 
+export function renderRiskZoneElements(
+  zones: RiskZone[],
+  onZonePress?: (zone: RiskZone) => void
+): React.ReactElement[] {
+  const elements: React.ReactElement[] = [];
+
+  zones.forEach((zone) => {
+    const colors = riskColors[zone.riskLevel];
+    elements.push(
+      <Circle
+        key={`circle-${zone.id}`}
+        center={zone.center}
+        radius={zone.radius}
+        fillColor={colors.fill}
+        strokeColor={colors.stroke}
+        strokeWidth={2}
+      />
+    );
+    elements.push(
+      <Marker
+        key={`risk-marker-${zone.id}`}
+        coordinate={zone.center}
+        onPress={() => onZonePress?.(zone)}
+        title={zone.name}
+        description={zone.description}
+        tracksViewChanges={false}>
+        <View style={[styles.markerContainer, { borderColor: colors.stroke }]}>
+          <Icon
+            name={
+              zone.riskLevel === 'critical'
+                ? 'alert'
+                : zone.riskLevel === 'moderate'
+                ? 'alert-outline'
+                : 'check-circle'
+            }
+            size={16}
+            color={colors.stroke}
+          />
+          <Text style={[styles.markerText, { color: colors.stroke }]}>
+            {zone.waveHeight}m
+          </Text>
+        </View>
+      </Marker>
+    );
+  });
+
+  return elements;
+}
+
 const RiskZoneOverlay: React.FC<RiskZoneOverlayProps> = ({
   zones,
   onZonePress,
 }) => {
-  return (
-    <>
-      {zones.map((zone) => {
-        const colors = riskColors[zone.riskLevel];
-        return (
-          <React.Fragment key={zone.id}>
-            <Circle
-              center={zone.center}
-              radius={zone.radius}
-              fillColor={colors.fill}
-              strokeColor={colors.stroke}
-              strokeWidth={2}
-            />
-            <Marker
-              coordinate={zone.center}
-              onPress={() => onZonePress?.(zone)}
-              title={zone.name}
-              description={zone.description}>
-              <View style={[styles.markerContainer, { borderColor: colors.stroke }]}>
-                <Icon
-                  name={
-                    zone.riskLevel === 'critical'
-                      ? 'alert'
-                      : zone.riskLevel === 'moderate'
-                      ? 'alert-outline'
-                      : 'check-circle'
-                  }
-                  size={16}
-                  color={colors.stroke}
-                />
-                <Text style={[styles.markerText, { color: colors.stroke }]}>
-                  {zone.waveHeight}m
-                </Text>
-              </View>
-            </Marker>
-          </React.Fragment>
-        );
-      })}
-    </>
-  );
+  return <>{renderRiskZoneElements(zones, onZonePress)}</>;
 };
 
 const styles = StyleSheet.create({

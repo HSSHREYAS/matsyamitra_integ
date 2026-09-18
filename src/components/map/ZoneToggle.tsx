@@ -34,6 +34,7 @@ const styles = StyleSheet.create({
     right: Spacing.xxl,
     zIndex: 10,
     ...Shadows.fab,
+    elevation: 15,
   },
 });
 

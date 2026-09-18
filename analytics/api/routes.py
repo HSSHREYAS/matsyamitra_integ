@@ -28,6 +28,7 @@ from analytics.current_state import (
 from analytics.incois.repository import IncoisAdvisoryRepository
 from analytics.persistence.database import create_database_engine
 from analytics.persistence.models import IncoisAdvisory, SamplingLocation
+from analytics.scheduler import get_scheduler_status, trigger_pipeline_job
 
 logger = logging.getLogger("matsyamitra_api")
 
@@ -336,3 +337,15 @@ def get_alerts(session: Session = Depends(get_db_session)) -> list[AlertOut]:
         logger.warning("Could not aggregate INCOIS alerts: %s", exc)
 
     return alerts
+
+
+@router.get("/pipeline/status")
+def get_pipeline_status():
+    """Return runtime metadata and next scheduled execution times for all data pipelines."""
+    return get_scheduler_status()
+
+
+@router.post("/pipeline/trigger")
+def trigger_pipeline(job: str = Query("all", description="Pipeline to trigger: incois, open_meteo, or all")):
+    """Trigger an asynchronous execution of a pipeline job in the background."""
+    return trigger_pipeline_job(job)
