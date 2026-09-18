@@ -29,12 +29,12 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({ activeIndex, onToggle }) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Spacing.xl,
-    left: Spacing.xxl,
-    right: Spacing.xxl,
-    zIndex: 10,
+    top: 6,
+    left: Spacing.xl,
+    right: Spacing.xl,
+    zIndex: 14,
     ...Shadows.fab,
-    elevation: 15,
+    elevation: 10,
   },
 });
 

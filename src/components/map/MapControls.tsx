@@ -11,15 +11,31 @@ interface MapControlsProps {
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onMyLocation?: () => void;
+  onToggleLayer?: () => void;
+  isSatellite?: boolean;
 }
 
 const MapControls: React.FC<MapControlsProps> = ({
   onZoomIn,
   onZoomOut,
   onMyLocation,
+  onToggleLayer,
+  isSatellite = false,
 }) => {
   return (
     <View style={styles.container}>
+      {onToggleLayer && (
+        <TouchableOpacity
+          style={[styles.button, isSatellite && styles.activeLayerButton]}
+          onPress={onToggleLayer}
+          activeOpacity={0.7}>
+          <Icon
+            name={isSatellite ? 'layers' : 'chart-line'}
+            size={20}
+            color={isSatellite ? '#FFFFFF' : Colors.oceanBlue}
+          />
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         style={styles.button}
         onPress={onZoomIn}
@@ -45,8 +61,8 @@ const MapControls: React.FC<MapControlsProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    right: Spacing.lg,
-    top: 130,
+    right: Spacing.md,
+    top: 248,
     gap: Spacing.sm,
     zIndex: 10,
   },
@@ -61,6 +77,9 @@ const styles = StyleSheet.create({
   },
   locationButton: {
     backgroundColor: Colors.primaryAccent,
+  },
+  activeLayerButton: {
+    backgroundColor: Colors.oceanBlue,
   },
 });
 

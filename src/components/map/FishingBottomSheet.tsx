@@ -1,30 +1,67 @@
 /**
- * FishingBottomSheet — Draggable bottom sheet for fishing zone details
+ * FishingBottomSheet — Draggable bottom sheet for fishing zone details,
+ * realistic nautical navigation legs, diesel fuel estimation, and fleet crowding intelligence.
  */
 
-import React, { useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import BottomSheet, { BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 import Badge from '../common/Badge';
 import type { FishingZone } from '../../data/mockZones';
 import { mapCoverage } from '../../data/mockZones';
 import { getCompassHeading } from '../../services/api/transformers';
+import type { RealisticSeaRoute } from '../../services/navigation/nauticalRoutingEngine';
 
 interface FishingBottomSheetProps {
   selectedZone?: FishingZone | null;
+  activeRoute?: RealisticSeaRoute | null;
+  departurePortName?: string;
+  crowdInfo?: {
+    count: number;
+    level: 'low' | 'moderate' | 'high';
+    labelKn: string;
+  } | null;
+  sheetSnapIndex?: number;
 }
 
 const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
   selectedZone,
+  activeRoute,
+  departurePortName,
+  crowdInfo,
+  sheetSnapIndex,
 }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['25%', '60%', '90%'], []);
+  const snapPoints = useMemo(() => ['26%', '62%', '92%'], []);
+  const [sheetIndex, setSheetIndex] = useState(0);
+  const [showAllLegs, setShowAllLegs] = useState(true); // Default open to show navigation legs!
 
   const handleSheetChanges = useCallback((index: number) => {
-    // Handle sheet position changes if needed
+    setSheetIndex(index);
   }, []);
+
+  useEffect(() => {
+    if (typeof sheetSnapIndex === 'number' && sheetSnapIndex >= 0) {
+      bottomSheetRef.current?.snapToIndex(sheetSnapIndex);
+    }
+  }, [sheetSnapIndex]);
+
+  const toggleExpand = useCallback(() => {
+    if (sheetIndex === 0) {
+      bottomSheetRef.current?.snapToIndex(1);
+    } else {
+      bottomSheetRef.current?.snapToIndex(0);
+    }
+  }, [sheetIndex]);
+
+  const crowdDotColor =
+    crowdInfo?.level === 'low'
+      ? '#10B981'
+      : crowdInfo?.level === 'moderate'
+      ? '#F59E0B'
+      : '#EF4444';
 
   return (
     <BottomSheet
@@ -35,10 +72,20 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
       handleIndicatorStyle={styles.handle}
       backgroundStyle={styles.sheetBackground}
       style={styles.sheet}>
-      <BottomSheetView style={styles.content}>
-        {/* Collapsed content — always visible */}
-        <View style={styles.collapsedContent}>
-          <Text style={styles.coverageTitle}>Active Coverage Area</Text>
+      <BottomSheetScrollView contentContainerStyle={styles.content}>
+        {/* Collapsed content — tap to expand / collapse */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={toggleExpand}
+          style={styles.collapsedContent}>
+          <View style={styles.coverageTitleRow}>
+            <Text style={styles.coverageTitle}>Active Coverage Area</Text>
+            <Icon
+              name={sheetIndex > 0 ? 'chevron-down' : 'chevron-up'}
+              size={20}
+              color={Colors.primaryAccent}
+            />
+          </View>
           <View style={styles.zoneCountRow}>
             <View style={[styles.dot, { backgroundColor: Colors.safe }]} />
             <Text style={styles.zoneCountText}>
@@ -70,14 +117,14 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
               </View>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Expanded content — Zone details */}
         {selectedZone && (
           <View style={styles.expandedContent}>
             <View style={styles.divider} />
 
-            <Badge label="OPTIMAL ZONE" variant="teal" style={styles.zoneBadge} />
+            <Badge label="OPTIMAL PFZ ZONE" variant="teal" style={styles.zoneBadge} />
 
             <Text style={styles.sectorLabel}>CURRENT SECTOR</Text>
             <Text style={styles.zoneName}>{selectedZone.name}</Text>
@@ -92,7 +139,7 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
               </View>
             </View>
 
-            {/* Data cards */}
+            {/* Oceanographic Data cards */}
             <View style={styles.dataCardsRow}>
               <View style={styles.dataCard}>
                 <Icon name="leaf" size={20} color={Colors.primaryAccent} />
@@ -118,8 +165,135 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
               </View>
             </View>
 
-            {/* INCOIS Navigation Vector Card */}
-            {selectedZone.navigationVector && (
+            {/* REALISTIC NAUTICAL SEA ROUTE CARD */}
+            {activeRoute ? (
+              <View style={styles.navCard}>
+                <View style={styles.navHeader}>
+                  <View style={styles.navHeaderLeft}>
+                    <Icon name="compass-rose" size={20} color={Colors.oceanBlue} />
+                    <View>
+                      <Text style={styles.navHeaderTitle}>REALISTIC NAUTICAL SEA ROUTE</Text>
+                      <Text style={styles.navHeaderSubtitle}>ನೈಜ ಸಮುದ್ರ ಸಂಚಾರ ಮಾರ್ಗ</Text>
+                    </View>
+                  </View>
+                  <View style={styles.portPill}>
+                    <Icon name="anchor" size={12} color={Colors.textPrimary} />
+                    <Text style={styles.portPillText}>
+                      {activeRoute.originPortName}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Primary Route Telemetry Grid */}
+                <View style={styles.navGrid}>
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>TOTAL DISTANCE</Text>
+                    <Text style={styles.navMetricVal}>
+                      {activeRoute.totalDistanceNm.toFixed(1)} NM
+                    </Text>
+                    <Text style={styles.navMetricSub}>
+                      ({activeRoute.totalDistanceKm.toFixed(0)} km)
+                    </Text>
+                  </View>
+
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>EST. TRANSIT</Text>
+                    <Text style={styles.navMetricVal}>
+                      ~{activeRoute.totalDurationHours} hrs
+                    </Text>
+                    <Text style={styles.navMetricSub}>@ 10.5 knots</Text>
+                  </View>
+
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>EST. DIESEL</Text>
+                    <Text style={[styles.navMetricVal, { color: '#B45309' }]}>
+                      ~{activeRoute.estimatedDieselLiters} L
+                    </Text>
+                    <Text style={styles.navMetricSub}>
+                      ₹{activeRoute.estimatedFuelCostInr.toLocaleString()}
+                    </Text>
+                  </View>
+
+                  <View style={styles.navMetric}>
+                    <Text style={styles.navMetricLabel}>FLEET CROWD</Text>
+                    <View style={styles.crowdMetricRow}>
+                      <View style={[styles.crowdDot, { backgroundColor: crowdDotColor }]} />
+                      <Text style={styles.navMetricVal}>
+                        {crowdInfo ? `${crowdInfo.count} bts` : 'Low'}
+                      </Text>
+                    </View>
+                    <Text style={styles.navMetricSub}>
+                      {crowdInfo?.level === 'low' ? 'Peaceful' : 'Active'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Fleet Crowding Advisory */}
+                {crowdInfo && (
+                  <View style={styles.crowdAdvisoryBox}>
+                    <Icon
+                      name={crowdInfo.level === 'low' ? 'check-decagram' : 'alert-circle'}
+                      size={15}
+                      color={crowdDotColor}
+                    />
+                    <Text style={styles.crowdAdvisoryText}>
+                      {crowdInfo.labelKn} — {crowdInfo.level === 'low' ? 'Zero gear collision risk' : 'Maintain safe buffer distance'}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Turn-by-Turn Nautical Legs Accordion */}
+                <View style={styles.legsContainer}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setShowAllLegs(!showAllLegs)}
+                    style={styles.legsToggleBtn}>
+                    <Text style={styles.legsToggleTitle}>
+                      NAUTICAL WAYPOINTS & TURNS ({activeRoute.legs.length} LEGS)
+                    </Text>
+                    <Icon
+                      name={showAllLegs ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color={Colors.oceanBlue}
+                    />
+                  </TouchableOpacity>
+
+                  {showAllLegs && (
+                    <View style={styles.legsList}>
+                      {activeRoute.legs.map((leg) => (
+                        <View key={leg.legIndex} style={styles.legCard}>
+                          <View style={styles.legHeaderRow}>
+                            <View style={styles.legBadge}>
+                              <Text style={styles.legBadgeText}>LEG {leg.legIndex}</Text>
+                            </View>
+                            <Text style={styles.legTitle}>{leg.title}</Text>
+                            <View style={styles.legHeadingPill}>
+                              <Icon name="compass" size={12} color={Colors.oceanBlue} />
+                              <Text style={styles.legHeadingText}>
+                                {leg.bearingDegrees}° {leg.compassHeading}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <Text style={styles.legInstructionKn}>{leg.instructionKn}</Text>
+                          <Text style={styles.legInstructionEn}>{leg.instruction}</Text>
+
+                          <View style={styles.legMetricsRow}>
+                            <Text style={styles.legSubMetric}>
+                              Distance: <Text style={styles.bold}>{leg.distanceNm} NM</Text> ({leg.distanceKm} km)
+                            </Text>
+                            <Text style={styles.legSubMetric}>
+                              Est. Run: <Text style={styles.bold}>~{leg.estMinutes} mins</Text>
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            ) : selectedZone.navigationVector ? (
+              // Fallback INCOIS direct vector
               <View style={styles.navCard}>
                 <View style={styles.navHeader}>
                   <View style={styles.navHeaderLeft}>
@@ -164,12 +338,12 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
                   </View>
                 </View>
               </View>
-            )}
+            ) : null}
 
             {/* Target Species */}
             {selectedZone.species && selectedZone.species.length > 0 && (
               <View style={styles.speciesContainer}>
-                <Text style={styles.speciesTitle}>TARGET SPECIES IN ZONE</Text>
+                <Text style={styles.speciesTitle}>TARGET SPECIES IN ZONE (ಮೀನು ಪ್ರಭೇದಗಳು)</Text>
                 <View style={styles.speciesChips}>
                   {selectedZone.species.map((sp, idx) => (
                     <View key={idx} style={styles.speciesChip}>
@@ -186,7 +360,7 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
               <View style={styles.intelligenceHeader}>
                 <Icon name="brain" size={18} color={Colors.primaryAccent} />
                 <Text style={styles.intelligenceTitle}>
-                  FISHING INTELLIGENCE
+                  FISHING INTELLIGENCE (ಮೀನುಗಾರಿಕೆ ಮಾಹಿತಿ)
                 </Text>
               </View>
               <Text style={styles.intelligenceText}>
@@ -195,7 +369,7 @@ const FishingBottomSheet: React.FC<FishingBottomSheetProps> = ({
             </View>
           </View>
         )}
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheet>
   );
 };
@@ -217,16 +391,21 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   content: {
-    flex: 1,
     paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xl,
   },
   collapsedContent: {
     paddingTop: Spacing.sm,
   },
+  coverageTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
   coverageTitle: {
     ...Typography.sectionTitle,
     color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
   },
   zoneCountRow: {
     flexDirection: 'row',
@@ -368,9 +547,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9FF',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#BAE6FD',
     marginBottom: Spacing.lg,
+    ...Shadows.card,
   },
   navHeader: {
     flexDirection: 'row',
@@ -381,22 +561,29 @@ const styles = StyleSheet.create({
   navHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   navHeaderTitle: {
     ...Typography.chip,
     color: Colors.oceanBlue,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  navHeaderSubtitle: {
+    fontSize: 10,
+    color: Colors.textSecondary,
+    fontWeight: '600',
   },
   portPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#E0F2FE',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: BorderRadius.pill,
     gap: 4,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
   portPillText: {
     ...Typography.micro,
@@ -414,7 +601,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     paddingVertical: 8,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -422,16 +609,16 @@ const styles = StyleSheet.create({
   navMetricLabel: {
     ...Typography.micro,
     color: Colors.textSecondary,
-    fontSize: 9,
-    fontWeight: '600',
+    fontSize: 8,
+    fontWeight: '700',
     marginBottom: 2,
     textTransform: 'uppercase',
   },
   navMetricVal: {
     ...Typography.label,
     color: Colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 12,
+    fontWeight: '800',
+    fontSize: 11,
     textAlign: 'center',
   },
   navMetricSub: {
@@ -439,6 +626,133 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 9,
     marginTop: 2,
+  },
+  crowdMetricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  crowdDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  crowdAdvisoryBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  crowdAdvisoryText: {
+    fontSize: 10,
+    color: Colors.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+  },
+  legsContainer: {
+    marginTop: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  legsToggleBtn: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC',
+  },
+  legsToggleTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: Colors.oceanBlue,
+    letterSpacing: 0.4,
+  },
+  legsList: {
+    padding: 8,
+    gap: 8,
+  },
+  legCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 6,
+    padding: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.oceanBlue,
+  },
+  legHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  legBadge: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  legBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: Colors.oceanBlue,
+  },
+  legTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    flex: 1,
+    marginLeft: 6,
+  },
+  legHeadingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  legHeadingText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.oceanBlue,
+  },
+  legInstructionKn: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  legInstructionEn: {
+    fontSize: 9,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  legMetricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingTop: 4,
+  },
+  legSubMetric: {
+    fontSize: 9,
+    color: Colors.textSecondary,
+  },
+  bold: {
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   speciesContainer: {
     marginBottom: Spacing.lg,

@@ -5,3 +5,4 @@
 export { Colors } from './colors';
 export { Typography, FontFamily, FontSize } from './typography';
 export { Spacing, BorderRadius, Shadows, Layout } from './spacing';
+export { marineChartMapStyle, marineNightChartMapStyle } from './marineMapStyle';

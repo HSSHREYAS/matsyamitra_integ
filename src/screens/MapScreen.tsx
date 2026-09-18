@@ -1,19 +1,29 @@
 /**
- * MapScreen — Marine Navigation with Fishing/Risk zone toggle
- * Connected to live MatsyaMitra 25 canonical locations telemetry & INCOIS PFZ advisories.
+ * MapScreen — Marine Chartplotter Navigation with Fishing/Risk zone toggle,
+ * Dynamic departure port anchoring, Top 3 PFZ Multi-Criteria Recommendations,
+ * and realistic multi-leg nautical sea routing.
  */
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+  Shadows,
+  marineChartMapStyle,
+} from '../theme';
 import ZoneToggle from '../components/map/ZoneToggle';
 import MapControls from '../components/map/MapControls';
 import { renderFishingZoneElements } from '../components/map/FishingZoneOverlay';
 import { renderRiskZoneElements } from '../components/map/RiskZoneOverlay';
 import FishingBottomSheet from '../components/map/FishingBottomSheet';
 import RiskBottomSheet from '../components/map/RiskBottomSheet';
+import Top3ZoneDrawer from '../components/map/Top3ZoneDrawer';
+import LocationSelectorModal from '../components/home/LocationSelectorModal';
 import {
   mockRiskZones,
   mapInitialRegion,
@@ -26,8 +36,22 @@ import {
   transformCurrentStatesToFishingZones,
   transformCurrentStatesToRiskZones,
   getLandingCenterCoordinates,
+  CANONICAL_PORT_COORDINATES,
+  getCanonicalCityName,
 } from '../services/api';
-import { getUserProfile, type UserProfile } from '../services/storage/userProfileStorage';
+import {
+  getUserProfile,
+  saveUserProfile,
+  type UserProfile,
+} from '../services/storage/userProfileStorage';
+import {
+  getTop3RecommendedZones,
+  type RecommendedPfzZone,
+} from '../services/navigation/pfzRecommendationEngine';
+import {
+  generateRealisticSeaRoute,
+  type RealisticSeaRoute,
+} from '../services/navigation/nauticalRoutingEngine';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 
@@ -41,10 +65,17 @@ const MapScreen: React.FC = () => {
   const [activeMode, setActiveMode] = useState(0); // 0 = Fishing, 1 = Risk
   const [region, setRegion] = useState<Region>(mapInitialRegion);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isSatellite, setIsSatellite] = useState(false);
+  const [isPortModalVisible, setIsPortModalVisible] = useState(false);
+  const [sheetSnapIndex, setSheetSnapIndex] = useState<number>(0);
   const mapRef = useRef<MapView>(null);
 
+  // Active departure port (synced with userProfile or fallback to Malpe KARN_018)
+  const [activePortId, setActivePortId] = useState<string>('KARN_018');
+  const [activePortName, setActivePortName] = useState<string>('Malpe');
+
   // Live telemetry hook (25 canonical locations)
-  const { states, isOnline: statesOnline, refresh: refreshStates } = useCurrentState('KARN_001');
+  const { states, isOnline: statesOnline, refresh: refreshStates } = useCurrentState(activePortId);
 
   // Live INCOIS Advisories hook (29 real PFZ advisories)
   const { rawAdvisories, isOnline: advisoriesOnline, refresh: refreshAdvisories } = useAdvisories();
@@ -56,6 +87,10 @@ const MapScreen: React.FC = () => {
     try {
       const p = await getUserProfile();
       setUserProfile(p);
+      if (p.defaultPortId && p.defaultPortName) {
+        setActivePortId(p.defaultPortId);
+        setActivePortName(p.defaultPortName);
+      }
     } catch {
       // ignore
     }
@@ -71,6 +106,14 @@ const MapScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, loadProfile, refreshStates, refreshAdvisories]);
 
+  // Active departure port coordinates
+  const departurePortCoords = useMemo(() => {
+    if (CANONICAL_PORT_COORDINATES[activePortId]) {
+      return CANONICAL_PORT_COORDINATES[activePortId];
+    }
+    return getLandingCenterCoordinates(activePortName);
+  }, [activePortId, activePortName]);
+
   // Compute live fishing zones with real INCOIS navigation vectors
   const fishingZones = useMemo<FishingZone[]>(() => {
     if (rawAdvisories && rawAdvisories.length > 0) {
@@ -81,6 +124,16 @@ const MapScreen: React.FC = () => {
     }
     return [];
   }, [rawAdvisories, states]);
+
+  // Compute Top 3 Recommended Zones for the active departure port
+  const top3RecommendedZones = useMemo<RecommendedPfzZone[]>(() => {
+    if (fishingZones.length === 0) return [];
+    return getTop3RecommendedZones(fishingZones, {
+      id: activePortId,
+      name: activePortName,
+      coordinates: departurePortCoords,
+    });
+  }, [fishingZones, activePortId, activePortName, departurePortCoords]);
 
   // Compute live risk zones from 25 canonical points (or fallback)
   const riskZones = useMemo<RiskZone[]>(() => {
@@ -94,24 +147,119 @@ const MapScreen: React.FC = () => {
   const [selectedFishingZone, setSelectedFishingZone] = useState<FishingZone | null>(null);
   const [selectedRiskZone, setSelectedRiskZone] = useState<RiskZone | null>(null);
 
-  // Auto-select initial zone: prefer zone nearest to user's default port
+  // Auto-select #1 Top Recommended Zone whenever departure port or zones change
   useEffect(() => {
-    if (fishingZones.length > 0) {
+    if (top3RecommendedZones.length > 0) {
       if (!selectedFishingZone || !fishingZones.some((z) => z.id === selectedFishingZone.id)) {
-        const homePortName = userProfile?.defaultPortName?.toLowerCase();
-        const preferredZone = homePortName
-          ? fishingZones.find((z) =>
-              z.navigationVector?.originPortName.toLowerCase().includes(homePortName) ||
-              z.name.toLowerCase().includes(homePortName)
-            )
-          : null;
-
-        setSelectedFishingZone(preferredZone || fishingZones[0]);
+        setSelectedFishingZone(top3RecommendedZones[0].zone);
       }
-    } else {
-      setSelectedFishingZone(null);
+    } else if (fishingZones.length > 0 && !selectedFishingZone) {
+      setSelectedFishingZone(fishingZones[0]);
     }
-  }, [fishingZones, selectedFishingZone, userProfile]);
+  }, [top3RecommendedZones, fishingZones, selectedFishingZone]);
+
+  // Compute active realistic sea route from selected zone and active departure port
+  const activeRealisticRoute = useMemo<RealisticSeaRoute | null>(() => {
+    if (!selectedFishingZone) return null;
+
+    // Check if the selected zone is one of the top 3 recommendations
+    const matchingRec = top3RecommendedZones.find((r) => r.zone.id === selectedFishingZone.id);
+    if (matchingRec) {
+      return matchingRec.realisticRoute;
+    }
+
+    // Otherwise generate realistic route dynamically
+    return generateRealisticSeaRoute({
+      originPortId: activePortId,
+      originPortName: activePortName,
+      originCoords: departurePortCoords,
+      targetPfzId: selectedFishingZone.id,
+      targetPfzName: selectedFishingZone.name,
+      targetPfzCoords: selectedFishingZone.center,
+    });
+  }, [selectedFishingZone, top3RecommendedZones, activePortId, activePortName, departurePortCoords]);
+
+  // Find fleet crowding info for the selected zone
+  const activeCrowdInfo = useMemo(() => {
+    if (!selectedFishingZone) return null;
+    const matchingRec = top3RecommendedZones.find((r) => r.zone.id === selectedFishingZone.id);
+    if (matchingRec) {
+      return {
+        count: matchingRec.vesselCountEstimate,
+        level: matchingRec.crowdLevel,
+        labelKn: matchingRec.crowdLabelKn,
+      };
+    }
+    return {
+      count: 6,
+      level: 'low' as const,
+      labelKn: 'ಕಡಿಮೆ ದೋಣಿಗಳು (ಶಾಂತ ವಲಯ)',
+    };
+  }, [selectedFishingZone, top3RecommendedZones]);
+
+  // Camera framing helper for a route
+  const frameRoute = useCallback((route: RealisticSeaRoute) => {
+    if (!route || route.coordinates.length < 2) return;
+    const coords = route.coordinates;
+    let minLat = coords[0].latitude;
+    let maxLat = coords[0].latitude;
+    let minLon = coords[0].longitude;
+    let maxLon = coords[0].longitude;
+
+    for (const c of coords) {
+      minLat = Math.min(minLat, c.latitude);
+      maxLat = Math.max(maxLat, c.latitude);
+      minLon = Math.min(minLon, c.longitude);
+      maxLon = Math.max(maxLon, c.longitude);
+    }
+
+    const midLat = (minLat + maxLat) / 2;
+    const midLon = (minLon + maxLon) / 2;
+    const latDelta = Math.max(0.65, (maxLat - minLat) * 1.55);
+    const lonDelta = Math.max(0.65, (maxLon - minLon) * 1.55);
+
+    mapRef.current?.animateToRegion({
+      latitude: midLat,
+      longitude: midLon,
+      latitudeDelta: latDelta,
+      longitudeDelta: lonDelta,
+    }, 550);
+  }, []);
+
+  // Handle switching departure port
+  const handleSelectPort = useCallback(async (portId: string) => {
+    const cityName = getCanonicalCityName(portId);
+    setActivePortId(portId);
+    setActivePortName(cityName);
+    setIsPortModalVisible(false);
+
+    // Persist as user's profile port
+    try {
+      await saveUserProfile({
+        defaultPortId: portId,
+        defaultPortName: cityName,
+      });
+      setUserProfile((prev) => (prev ? { ...prev, defaultPortId: portId, defaultPortName: cityName } : null));
+    } catch {
+      // ignore
+    }
+
+    // Recenter camera on the new port and offshore area
+    const coords = CANONICAL_PORT_COORDINATES[portId] || getLandingCenterCoordinates(cityName);
+    mapRef.current?.animateToRegion({
+      latitude: coords.latitude,
+      longitude: coords.longitude - 0.25,
+      latitudeDelta: 1.1,
+      longitudeDelta: 1.1,
+    }, 500);
+  }, []);
+
+  // Handle selecting one of the Top 3 cards
+  const handleSelectRecommendedZone = useCallback((rec: RecommendedPfzZone) => {
+    setSelectedFishingZone(rec.zone);
+    frameRoute(rec.realisticRoute);
+    setSheetSnapIndex(1);
+  }, [frameRoute]);
 
   const handleZoomIn = async () => {
     try {
@@ -124,7 +272,7 @@ const MapScreen: React.FC = () => {
         return;
       }
     } catch {
-      // fallback to region calculation
+      // fallback
     }
     const nextRegion = {
       ...region,
@@ -146,7 +294,7 @@ const MapScreen: React.FC = () => {
         return;
       }
     } catch {
-      // fallback to region calculation
+      // fallback
     }
     const nextRegion = {
       ...region,
@@ -158,44 +306,30 @@ const MapScreen: React.FC = () => {
   };
 
   const handleMyLocation = () => {
-    if (userProfile?.defaultPortName) {
-      const coords = getLandingCenterCoordinates(userProfile.defaultPortName);
-      const targetRegion = {
-        latitude: coords.latitude,
-        longitude: coords.longitude - 0.2, // Offset offshore to view vectors
-        latitudeDelta: 1.2,
-        longitudeDelta: 1.2,
-      };
-      setRegion(targetRegion);
-      mapRef.current?.animateToRegion(targetRegion, 500);
-      return;
-    }
-    setRegion(mapInitialRegion);
-    mapRef.current?.animateToRegion(mapInitialRegion, 500);
+    const coords = departurePortCoords;
+    const targetRegion = {
+      latitude: coords.latitude,
+      longitude: coords.longitude - 0.2, // Offset offshore to view navigation vectors
+      latitudeDelta: 1.2,
+      longitudeDelta: 1.2,
+    };
+    setRegion(targetRegion);
+    mapRef.current?.animateToRegion(targetRegion, 500);
   };
 
   const handleFishingZonePress = useCallback((zone: FishingZone) => {
     setSelectedFishingZone(zone);
-    if (zone.navigationVector) {
-      const midLat = (zone.navigationVector.originPortCoordinates.latitude + zone.center.latitude) / 2;
-      const midLon = (zone.navigationVector.originPortCoordinates.longitude + zone.center.longitude) / 2;
-      const latDiff = Math.abs(zone.navigationVector.originPortCoordinates.latitude - zone.center.latitude);
-      const lonDiff = Math.abs(zone.navigationVector.originPortCoordinates.longitude - zone.center.longitude);
-      mapRef.current?.animateToRegion({
-        latitude: midLat,
-        longitude: midLon,
-        latitudeDelta: Math.max(0.9, latDiff * 1.8),
-        longitudeDelta: Math.max(0.9, lonDiff * 1.8),
-      }, 450);
-    } else {
-      mapRef.current?.animateToRegion({
-        latitude: zone.center.latitude,
-        longitude: zone.center.longitude,
-        latitudeDelta: 0.8,
-        longitudeDelta: 0.8,
-      }, 450);
-    }
-  }, []);
+    const route = generateRealisticSeaRoute({
+      originPortId: activePortId,
+      originPortName: activePortName,
+      originCoords: departurePortCoords,
+      targetPfzId: zone.id,
+      targetPfzName: zone.name,
+      targetPfzCoords: zone.center,
+    });
+    frameRoute(route);
+    setSheetSnapIndex(1);
+  }, [activePortId, activePortName, departurePortCoords, frameRoute]);
 
   const handleRiskZonePress = useCallback((zone: RiskZone) => {
     setSelectedRiskZone(zone);
@@ -212,11 +346,20 @@ const MapScreen: React.FC = () => {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={styles.leftAction}>
-          <Icon name="navigation-variant" size={24} color={Colors.primaryAccent} />
+          <Icon name="compass-outline" size={22} color={Colors.primaryAccent} />
         </View>
+
         <View style={styles.titleContainer}>
-          <Text style={styles.topBarTitle}>Marine Navigation</Text>
-          <View style={styles.subStatusRow}>
+          <View style={styles.titleRow}>
+            <Text style={styles.topBarTitle}>Marine Chartplotter</Text>
+            <View style={styles.chartTag}>
+              <Text style={styles.chartTagText}>ECDIS</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsPortModalVisible(true)}
+            style={styles.subStatusRow}>
             <View
               style={[
                 styles.liveDot,
@@ -224,27 +367,37 @@ const MapScreen: React.FC = () => {
               ]}
             />
             <Text style={styles.subStatusText}>
-              {fishingZones.length > 0
-                ? `${fishingZones.length} INCOIS PFZs Active`
-                : isOnline
-                ? '25 Canonical Stations Online'
-                : 'Offline / Cached Mode'}
-              {userProfile?.defaultPortName ? ` • ${userProfile.defaultPortName}` : ''}
+              Departure: <Text style={styles.portHighlight}>{activePortName}</Text>
             </Text>
-          </View>
+            <Icon name="menu-down" size={16} color={Colors.oceanBlue} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity activeOpacity={0.7} onPress={handleRefresh} style={styles.refreshButton}>
-          <Icon name="refresh" size={22} color={Colors.primaryAccent} />
-        </TouchableOpacity>
+
+        <View style={styles.topActionsRight}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsSatellite(!isSatellite)}
+            style={[styles.actionIconBtn, isSatellite && styles.actionIconBtnActive]}>
+            <Icon
+              name={isSatellite ? 'earth' : 'map-clock'}
+              size={20}
+              color={isSatellite ? '#FFFFFF' : Colors.oceanBlue}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.7} onPress={handleRefresh} style={styles.actionIconBtn}>
+            <Icon name="refresh" size={20} color={Colors.primaryAccent} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Map */}
+      {/* Map View Container */}
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
           style={styles.map}
           initialRegion={mapInitialRegion}
-          mapType="standard"
+          mapType={isSatellite ? 'satellite' : 'standard'}
+          customMapStyle={isSatellite ? undefined : (marineChartMapStyle as any)}
           toolbarEnabled={false}
           zoomEnabled={true}
           zoomControlEnabled={false}
@@ -263,13 +416,25 @@ const MapScreen: React.FC = () => {
             renderFishingZoneElements(
               fishingZones,
               selectedFishingZone?.id,
-              handleFishingZonePress
+              handleFishingZonePress,
+              activeRealisticRoute
             )}
           {activeMode === 1 &&
             renderRiskZoneElements(riskZones, handleRiskZonePress)}
         </MapView>
 
-        {/* Zone Toggle */}
+        {/* Top 3 Recommended Zones Drawer (shown only in Fishing mode) */}
+        {activeMode === 0 && (
+          <Top3ZoneDrawer
+            recommendedZones={top3RecommendedZones}
+            selectedZoneId={selectedFishingZone?.id}
+            onSelectZone={handleSelectRecommendedZone}
+            departurePortName={activePortName}
+            onOpenPortPicker={() => setIsPortModalVisible(true)}
+          />
+        )}
+
+        {/* Zone Toggle (Fishing vs Risk) */}
         <ZoneToggle activeIndex={activeMode} onToggle={setActiveMode} />
 
         {/* Map Controls */}
@@ -277,20 +442,9 @@ const MapScreen: React.FC = () => {
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onMyLocation={handleMyLocation}
+          onToggleLayer={() => setIsSatellite(!isSatellite)}
+          isSatellite={isSatellite}
         />
-
-        {/* Empty PFZ Banner (shown in Fishing mode when no live PFZ data is available yet) */}
-        {activeMode === 0 && fishingZones.length === 0 && (
-          <View style={styles.emptyPfzBanner}>
-            <View style={styles.emptyPfzHeader}>
-              <Icon name="satellite-variant" size={18} color={Colors.primaryAccent} />
-              <Text style={styles.emptyPfzTitle}>PFZ TELEMETRY PENDING</Text>
-            </View>
-            <Text style={styles.emptyPfzText}>
-              Connecting to INCOIS advisory server... Live fishing-zone vectors will appear once synchronized.
-            </Text>
-          </View>
-        )}
 
         {/* Risk Legend (only shown in Risk mode) */}
         {activeMode === 1 && (
@@ -321,10 +475,25 @@ const MapScreen: React.FC = () => {
 
       {/* Bottom Sheet */}
       {activeMode === 0 ? (
-        <FishingBottomSheet selectedZone={selectedFishingZone} />
+        <FishingBottomSheet
+          selectedZone={selectedFishingZone}
+          activeRoute={activeRealisticRoute}
+          departurePortName={activePortName}
+          crowdInfo={activeCrowdInfo}
+          sheetSnapIndex={sheetSnapIndex}
+        />
       ) : (
         <RiskBottomSheet selectedZone={selectedRiskZone} />
       )}
+
+      {/* 25 Canonical Coastal Ports Selector Modal */}
+      <LocationSelectorModal
+        visible={isPortModalVisible}
+        onClose={() => setIsPortModalVisible(false)}
+        onSelectLocation={handleSelectPort}
+        selectedLocationId={activePortId}
+        states={states || []}
+      />
     </GestureHandlerRootView>
   );
 };
@@ -338,13 +507,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    paddingTop: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingTop: Spacing.lg,
     backgroundColor: Colors.cardBackground,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
-    zIndex: 20,
+    zIndex: 25,
     ...Shadows.card,
   },
   leftAction: {
@@ -358,33 +527,70 @@ const styles = StyleSheet.create({
   titleContainer: {
     alignItems: 'center',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   topBarTitle: {
     ...Typography.screenTitle,
+    fontSize: 16,
     color: Colors.textPrimary,
+  },
+  chartTag: {
+    backgroundColor: '#0A2540',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  chartTagText: {
+    fontSize: 9,
+    color: '#38BDF8',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   subStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     marginTop: 2,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.pill,
   },
   liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   subStatusText: {
     ...Typography.micro,
     color: Colors.textSecondary,
     fontWeight: '600',
   },
-  refreshButton: {
+  portHighlight: {
+    color: Colors.oceanBlue,
+    fontWeight: '800',
+  },
+  topActionsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionIconBtn: {
     width: 36,
     height: 36,
     borderRadius: BorderRadius.sm,
     backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  actionIconBtnActive: {
+    backgroundColor: Colors.oceanBlue,
+    borderColor: Colors.oceanBlue,
   },
   mapContainer: {
     flex: 1,
@@ -393,41 +599,9 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  emptyPfzBanner: {
-    position: 'absolute',
-    top: 90,
-    left: Spacing.lg,
-    right: Spacing.lg,
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primaryAccent,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    zIndex: 10,
-    ...Shadows.card,
-  },
-  emptyPfzHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  emptyPfzTitle: {
-    ...Typography.chip,
-    color: Colors.primaryAccent,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  emptyPfzText: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
   legendCard: {
     position: 'absolute',
-    top: 90,
+    top: 100,
     left: Spacing.lg,
     backgroundColor: 'rgba(255, 255, 255, 0.96)',
     borderRadius: BorderRadius.lg,

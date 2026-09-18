@@ -3,8 +3,11 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from './client';
 import type { CurrentStateResponse } from './types';
+
+const CACHE_KEY_STATES = '@matsyamitra_cached_states';
 
 export interface UseCurrentStateReturn {
   states: CurrentStateResponse[];
@@ -28,12 +31,28 @@ export function useCurrentState(initialLocationId: string = 'KARN_001'): UseCurr
     setError(null);
     try {
       const data = await apiClient.getCurrentStates();
-      setStates(data);
-      setIsOnline(true);
-      setError(null);
+      if (data && data.length > 0) {
+        setStates(data);
+        setIsOnline(true);
+        setError(null);
+        AsyncStorage.setItem(CACHE_KEY_STATES, JSON.stringify(data)).catch(() => {});
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to connect to MatsyaMitra API');
       setIsOnline(false);
+
+      // Restore from offline cache
+      try {
+        const cached = await AsyncStorage.getItem(CACHE_KEY_STATES);
+        if (cached) {
+          const cachedStates: CurrentStateResponse[] = JSON.parse(cached);
+          if (cachedStates && cachedStates.length > 0) {
+            setStates(cachedStates);
+          }
+        }
+      } catch {
+        // ignore cache read failure
+      }
     } finally {
       setIsLoading(false);
     }
