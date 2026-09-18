@@ -41,31 +41,31 @@ export const CANONICAL_LOCATIONS: CanonicalLocationItem[] = Object.entries(CANON
 );
 
 export const CANONICAL_PORT_COORDINATES: Record<string, { latitude: number; longitude: number }> = {
-  KARN_001: { latitude: 14.602642, longitude: 73.152614 }, // Karwar
-  KARN_002: { latitude: 13.714424, longitude: 74.206417 }, // Kundapura
-  KARN_003: { latitude: 14.252099, longitude: 73.284125 }, // Kumta
-  KARN_004: { latitude: 14.576383, longitude: 73.371932 }, // Ankola
-  KARN_005: { latitude: 12.656436, longitude: 74.245355 }, // Someshwara
-  KARN_006: { latitude: 13.87657, longitude: 73.0982 }, // Bhatkal Deep Sea
-  KARN_007: { latitude: 13.628876, longitude: 74.066202 }, // Malpe Offshore
-  KARN_008: { latitude: 13.697208, longitude: 74.292278 }, // Maravanthe
-  KARN_009: { latitude: 13.841149, longitude: 73.600926 }, // Baindur
-  KARN_010: { latitude: 13.701877, longitude: 74.189533 }, // Kundapura Coast
-  KARN_011: { latitude: 13.642529, longitude: 74.507275 }, // Gangolli
-  KARN_012: { latitude: 13.819599, longitude: 74.118591 }, // Shiroor
-  KARN_013: { latitude: 14.444009, longitude: 73.421502 }, // Gokarna
-  KARN_014: { latitude: 12.360216, longitude: 73.587784 }, // Mangalore Deep Sea
-  KARN_015: { latitude: 12.904593, longitude: 73.898817 }, // Surathkal
-  KARN_016: { latitude: 14.288519, longitude: 73.69884 }, // Honnavar
-  KARN_017: { latitude: 14.437228, longitude: 73.948746 }, // Belekeri
-  KARN_018: { latitude: 13.343755, longitude: 74.666625 }, // Malpe
-  KARN_019: { latitude: 13.722979, longitude: 73.496794 }, // Bhatkal Offshore
-  KARN_020: { latitude: 14.117504, longitude: 73.262162 }, // Murudeshwar
-  KARN_021: { latitude: 13.762229, longitude: 73.216743 }, // Netrani Deep Sea
-  KARN_022: { latitude: 13.522264, longitude: 73.478449 }, // Kaup
-  KARN_023: { latitude: 12.39785, longitude: 73.472452 }, // Ullal Offshore
-  KARN_024: { latitude: 13.763693, longitude: 73.448016 }, // Manki
-  KARN_025: { latitude: 12.896538, longitude: 74.71948 }, // Mangalore
+  KARN_001: { latitude: 14.8055, longitude: 74.1215 }, // Karwar (Baithkol Fishing Harbor)
+  KARN_002: { latitude: 13.6395, longitude: 74.6950 }, // Kundapura (Gangolli / Kundapura Port)
+  KARN_003: { latitude: 14.4285, longitude: 74.3510 }, // Kumta (Tadri Fishing Harbor)
+  KARN_004: { latitude: 14.7085, longitude: 74.2690 }, // Ankola (Belekeri Landing)
+  KARN_005: { latitude: 12.7980, longitude: 74.8560 }, // Someshwara (Ullal South Landing Center)
+  KARN_006: { latitude: 13.9785, longitude: 74.5420 }, // Bhatkal (Bhatkal Fishing Bunder)
+  KARN_007: { latitude: 13.3485, longitude: 74.7015 }, // Malpe Offshore Base (Malpe Main Port)
+  KARN_008: { latitude: 13.7085, longitude: 74.6465 }, // Maravanthe (Maravanthe Beach Wharf)
+  KARN_009: { latitude: 13.8560, longitude: 74.6055 }, // Baindur (Koderi Fishing Harbor)
+  KARN_010: { latitude: 13.6270, longitude: 74.6850 }, // Kundapura Coast (Kodi Beach Landing)
+  KARN_011: { latitude: 13.6385, longitude: 74.6885 }, // Gangolli (Gangolli Fisheries Jetty)
+  KARN_012: { latitude: 13.9350, longitude: 74.5800 }, // Shiroor (Shiroor Landing Center)
+  KARN_013: { latitude: 14.5360, longitude: 74.3160 }, // Gokarna (Tadadi / Gokarna Harbor)
+  KARN_014: { latitude: 12.8610, longitude: 74.8360 }, // Mangalore Deep Sea Base (Mangalore Bunder)
+  KARN_015: { latitude: 13.0080, longitude: 74.7950 }, // Surathkal (Surathkal Beach Landing)
+  KARN_016: { latitude: 14.2820, longitude: 74.4440 }, // Honnavar (Kasarkod / Honnavar Port)
+  KARN_017: { latitude: 14.7120, longitude: 74.2720 }, // Belekeri (Belekeri Port)
+  KARN_018: { latitude: 13.3485, longitude: 74.7015 }, // Malpe (Malpe Main Fishing Bunder)
+  KARN_019: { latitude: 13.9785, longitude: 74.5420 }, // Bhatkal Port
+  KARN_020: { latitude: 14.0950, longitude: 74.4840 }, // Murudeshwar (Murudeshwar Bunder)
+  KARN_021: { latitude: 14.0950, longitude: 74.4840 }, // Netrani Base (Murudeshwar Harbor)
+  KARN_022: { latitude: 13.2240, longitude: 74.7390 }, // Kaup (Kaup Light House Landing)
+  KARN_023: { latitude: 12.8080, longitude: 74.8530 }, // Ullal (Ullal Sea Front Landing)
+  KARN_024: { latitude: 14.1850, longitude: 74.4760 }, // Manki (Manki Landing Center)
+  KARN_025: { latitude: 12.8610, longitude: 74.8360 }, // Mangalore (Mangalore Old Port / Bunder)
 };
 
 /**

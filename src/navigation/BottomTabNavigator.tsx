@@ -48,7 +48,7 @@ const BottomTabNavigator: React.FC = () => {
       }}>
       {tabConfig.map((tab) => (
         <Tab.Screen
-          key={tab.name}
+          key={tab.name === 'Map' ? `${tab.name}-${Date.now()}` : tab.name}
           name={tab.name}
           component={tab.component}
           listeners={{

@@ -1,6 +1,17 @@
 /**
- * FishingZoneOverlay — Renders real INCOIS PFZ polygons, realistic nautical multi-leg sea routes,
- * and marine chartplotter markers on MapView.
+ * FishingZoneOverlay — Clean, Google Maps-style marine overlay.
+ * 
+ * In Navigation Mode (isNavigating):
+ * - HIDES ALL OTHER 28 ZONES & PINS.
+ * - Displays ONLY:
+ *   1. Source Marker on land (Green pin: Departure Port)
+ *   2. Destination Marker in sea (Red/Gold target: Selected PFZ)
+ *   3. Clean Nautical Sea Route polyline connecting Source to Destination.
+ * 
+ * In Browse Mode (!isNavigating):
+ * - Displays departure port marker on land.
+ * - Displays ONLY the Top 3 Recommended Zones with clean ①, ②, ③ badges.
+ * - Eliminates marker pileups and clutter.
  */
 
 import React from 'react';
@@ -15,6 +26,8 @@ interface FishingZoneOverlayProps {
   zones: FishingZone[];
   selectedZoneId?: string | null;
   activeRealisticRoute?: RealisticSeaRoute | null;
+  isNavigating?: boolean;
+  top3ZoneIds?: string[];
   onZonePress?: (zone: FishingZone) => void;
 }
 
@@ -22,132 +35,162 @@ export function renderFishingZoneElements(
   zones: FishingZone[],
   selectedZoneId?: string | null,
   onZonePress?: (zone: FishingZone) => void,
-  activeRealisticRoute?: RealisticSeaRoute | null
+  activeRealisticRoute?: RealisticSeaRoute | null,
+  isNavigating: boolean = false,
+  top3ZoneIds: string[] = []
 ): React.ReactElement[] {
   const elements: React.ReactElement[] = [];
 
-  // 1. Render Realistic Multi-Leg Sea Route for selected zone (if available)
-  if (activeRealisticRoute && activeRealisticRoute.coordinates.length > 1) {
-    // Outer Glow Nautical Polyline
+  // =========================================================================
+  // MODE 1: ACTIVE NAVIGATION MODE (EXACTLY LIKE GOOGLE MAPS)
+  // Everything disappears except Source, Destination, and the Route!
+  // =========================================================================
+  if (isNavigating && activeRealisticRoute && activeRealisticRoute.coordinates.length > 1) {
+    const originPoint = activeRealisticRoute.coordinates[0];
+    const destinationPoint = activeRealisticRoute.coordinates[activeRealisticRoute.coordinates.length - 1];
+    const selectedZone = zones.find((z) => z.id === selectedZoneId);
+
+    // 1. Target PFZ Polygon (subtle, clean boundary)
+    if (selectedZone && selectedZone.coordinates.length > 0) {
+      elements.push(
+        <Polygon
+          key="nav-target-polygon"
+          coordinates={selectedZone.coordinates}
+          fillColor="rgba(15, 166, 136, 0.25)"
+          strokeColor="#059669"
+          strokeWidth={2.5}
+          zIndex={3}
+        />
+      );
+    }
+
+    // 2. Nautical Polyline Glow
     elements.push(
       <Polyline
-        key="realistic-route-glow"
+        key="nav-route-glow"
         coordinates={activeRealisticRoute.coordinates}
-        strokeColor="rgba(2, 132, 199, 0.35)"
-        strokeWidth={7}
+        strokeColor="rgba(2, 132, 199, 0.30)"
+        strokeWidth={8}
         zIndex={5}
       />
     );
 
-    // Main Nautical Track Polyline
+    // 3. Nautical Core Route Track
     elements.push(
       <Polyline
-        key="realistic-route-core"
+        key="nav-route-core"
         coordinates={activeRealisticRoute.coordinates}
-        strokeColor={Colors.oceanBlue}
-        strokeWidth={3.5}
-        lineDashPattern={[12, 4]}
+        strokeColor="#0284C7"
+        strokeWidth={4}
+        lineDashPattern={[14, 5]}
         zIndex={6}
       />
     );
 
-    // Waypoint Markers along the realistic sea route
-    activeRealisticRoute.waypoints.forEach((wp, idx) => {
-      const isOrigin = wp.type === 'origin';
-      const isFairway = wp.type === 'breakwater';
-      const isShelf = wp.type === 'shelf';
+    // 4. SOURCE MARKER (ON LAND AT HARBOR) — Google Maps style green pin
+    elements.push(
+      <Marker
+        key="nav-source-marker"
+        coordinate={originPoint}
+        title={`${activeRealisticRoute.originPortName} Port`}
+        description="Departure Berth (ಪ್ರಾರಂಭ ಸ್ಥಳ)"
+        anchor={{ x: 0.5, y: 0.9 }}
+        tracksViewChanges={false}
+        zIndex={10}>
+        <View style={styles.sourcePinContainer}>
+          <View style={styles.sourcePin}>
+            <Icon name="anchor" size={16} color="#FFFFFF" />
+            <Text style={styles.sourcePinText}>{activeRealisticRoute.originPortName}</Text>
+          </View>
+          <View style={styles.sourcePinStem} />
+        </View>
+      </Marker>
+    );
 
-      // Skip destination marker since PFZ Center Marker will handle it
-      if (wp.type === 'destination') return;
-
-      elements.push(
-        <Marker
-          key={`wp-${idx}-${wp.name}`}
-          coordinate={wp.point}
-          title={wp.name}
-          description={
-            isOrigin
-              ? `Departure: ${activeRealisticRoute.originPortName}`
-              : isFairway
-              ? 'Breakwater Fairway Sea Buoy'
-              : '15m Bathymetric Shelf Clearance'
-          }
-          anchor={{ x: 0.5, y: 0.5 }}
-          tracksViewChanges={false}
-          zIndex={9}>
-          <View
-            style={[
-              styles.waypointMarker,
-              isOrigin
-                ? styles.originMarker
-                : isFairway
-                ? styles.fairwayMarker
-                : styles.shelfMarker,
-            ]}>
-            <Icon
-              name={wp.icon}
-              size={13}
-              color="#FFFFFF"
-            />
-            <Text style={styles.waypointText}>
-              {isOrigin
-                ? wp.name
-                : isFairway
-                ? 'Sea Buoy'
-                : 'Shelf Turn'}
+    // 5. DESTINATION MARKER (IN OCEAN AT PFZ) — Google Maps style target pin
+    const targetCoord = selectedZone ? selectedZone.center : destinationPoint;
+    elements.push(
+      <Marker
+        key="nav-dest-marker"
+        coordinate={targetCoord}
+        title={activeRealisticRoute.targetPfzName}
+        description={`Target Zone • ${selectedZone?.potential || 90}% Potential`}
+        anchor={{ x: 0.5, y: 0.9 }}
+        tracksViewChanges={false}
+        zIndex={10}>
+        <View style={styles.destPinContainer}>
+          <View style={styles.destPin}>
+            <Icon name="target" size={16} color="#FFFFFF" />
+            <Text style={styles.destPinText}>
+              {selectedZone ? `${selectedZone.name} (${selectedZone.potential}%)` : activeRealisticRoute.targetPfzName}
             </Text>
           </View>
-        </Marker>
-      );
-    });
-  } else {
-    // Fallback: reference straight lines for unselected zones
-    zones.forEach((zone) => {
-      if (!zone.navigationVector) return;
-      const isSelected = zone.id === selectedZoneId;
-      const nav = zone.navigationVector;
+          <View style={styles.destPinStem} />
+        </View>
+      </Marker>
+    );
 
-      elements.push(
-        <Polyline
-          key={`vector-${zone.id}`}
-          coordinates={[nav.originPortCoordinates, zone.center]}
-          strokeColor={isSelected ? Colors.oceanBlue : 'rgba(2, 132, 199, 0.25)'}
-          strokeWidth={isSelected ? 3 : 1.2}
-          lineDashPattern={isSelected ? [6, 4] : [8, 6]}
-          zIndex={isSelected ? 5 : 2}
-        />
-      );
-
-      if (isSelected) {
-        elements.push(
-          <Marker
-            key={`port-${zone.id}`}
-            coordinate={nav.originPortCoordinates}
-            title={nav.originPortName}
-            description="Departure Landing Center"
-            anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={false}
-            zIndex={8}>
-            <View style={styles.originMarker}>
-              <Icon name="anchor" size={13} color="#FFFFFF" />
-              <Text style={styles.waypointText}>{nav.originPortName}</Text>
-            </View>
-          </Marker>
-        );
-      }
-    });
+    // In Navigation Mode, return ONLY these clean elements! No other clutter!
+    return elements;
   }
 
-  // 2. PFZ Contour Polygons (Continental Shelf Thermal Fronts)
-  zones.forEach((zone) => {
+  // =========================================================================
+  // MODE 2: BROWSE MODE (CLEAN & CLUTTER-FREE)
+  // Shows departure port on land and ONLY the Top 3 recommended zones.
+  // =========================================================================
+
+  // 1. Departure Port Marker on Land
+  if (activeRealisticRoute) {
+    const originPoint = activeRealisticRoute.coordinates[0];
+    elements.push(
+      <Marker
+        key="browse-departure-port"
+        coordinate={originPoint}
+        title={`${activeRealisticRoute.originPortName} Port`}
+        description="Active Departure Harbor (ಹಾರ್ಬರ್)"
+        anchor={{ x: 0.5, y: 0.9 }}
+        tracksViewChanges={false}
+        zIndex={8}>
+        <View style={styles.sourcePinContainer}>
+          <View style={styles.sourcePin}>
+            <Icon name="anchor" size={15} color="#FFFFFF" />
+            <Text style={styles.sourcePinText}>{activeRealisticRoute.originPortName} Port</Text>
+          </View>
+          <View style={styles.sourcePinStem} />
+        </View>
+      </Marker>
+    );
+  }
+
+  // 2. Selected Route preview line (if a zone is highlighted in browse mode)
+  if (activeRealisticRoute && activeRealisticRoute.coordinates.length > 1) {
+    elements.push(
+      <Polyline
+        key="browse-route-preview"
+        coordinates={activeRealisticRoute.coordinates}
+        strokeColor={Colors.oceanBlue}
+        strokeWidth={3}
+        lineDashPattern={[10, 4]}
+        zIndex={4}
+      />
+    );
+  }
+
+  // Filter to Top 3 zones for clean display
+  const displayZones = top3ZoneIds.length > 0
+    ? zones.filter((z) => top3ZoneIds.includes(z.id))
+    : zones.slice(0, 3);
+
+  // 3. Top 3 PFZ Contour Polygons
+  displayZones.forEach((zone) => {
     const isSelected = zone.id === selectedZoneId;
     elements.push(
       <Polygon
         key={`poly-${zone.id}`}
         coordinates={zone.coordinates}
-        fillColor={isSelected ? 'rgba(15, 166, 136, 0.38)' : 'rgba(15, 166, 136, 0.18)'}
+        fillColor={isSelected ? 'rgba(15, 166, 136, 0.32)' : 'rgba(15, 166, 136, 0.16)'}
         strokeColor={isSelected ? '#059669' : Colors.primaryAccent}
-        strokeWidth={isSelected ? 3 : 1.5}
+        strokeWidth={isSelected ? 2.5 : 1.5}
         tappable
         zIndex={isSelected ? 4 : 3}
         onPress={() => onZonePress?.(zone)}
@@ -155,53 +198,36 @@ export function renderFishingZoneElements(
     );
   });
 
-  // 3. PFZ Center Markers
-  zones.forEach((zone) => {
+  // 4. ONLY Top 3 Center Markers (Clean ①, ②, ③ Badges — NO 29 marker wall of text!)
+  displayZones.forEach((zone, index) => {
     const isSelected = zone.id === selectedZoneId;
-    const nav = zone.navigationVector;
+    const rank = index + 1;
+    const rankLabel = rank === 1 ? '① BEST' : rank === 2 ? '② FUEL' : '③ HIGH';
+    const badgeColor = rank === 1 ? '#D97706' : rank === 2 ? '#059669' : '#0284C7';
 
     elements.push(
       <Marker
-        key={`marker-${zone.id}`}
+        key={`top3-marker-${zone.id}`}
         coordinate={zone.center}
-        title={zone.name}
-        description={`${zone.potential}% Potential • ${nav ? `${nav.depthM}m Depth • ${nav.distanceKm.toFixed(0)}km` : zone.sectorCode}`}
+        title={`${zone.name} (${zone.potential}%)`}
+        description="Tap to select sea route (ಮಾರ್ಗ ನೋಡಿ)"
         onPress={() => onZonePress?.(zone)}
         anchor={{ x: 0.5, y: 0.5 }}
         tracksViewChanges={isSelected}
         zIndex={isSelected ? 10 : 6}>
         <View
           style={[
-            styles.pfzMarker,
-            isSelected && styles.pfzMarkerSelected,
+            styles.cleanPfzMarker,
+            isSelected && styles.cleanPfzMarkerSelected,
+            { borderColor: isSelected ? Colors.oceanBlue : badgeColor },
           ]}>
-          <Icon
-            name="fish"
-            size={14}
-            color={isSelected ? '#FFFFFF' : Colors.primaryAccentDark}
-          />
-          <Text
-            style={[
-              styles.pfzMarkerText,
-              isSelected && styles.pfzMarkerTextSelected,
-            ]}>
-            {zone.potential}%
-          </Text>
-          {nav && (
-            <View
-              style={[
-                styles.depthBadge,
-                isSelected && styles.depthBadgeSelected,
-              ]}>
-              <Text
-                style={[
-                  styles.depthBadgeText,
-                  isSelected && styles.depthBadgeTextSelected,
-                ]}>
-                {nav.depthM}m
-              </Text>
-            </View>
-          )}
+          <View style={[styles.rankTag, { backgroundColor: badgeColor }]}>
+            <Text style={styles.rankTagText}>{rankLabel}</Text>
+          </View>
+          <View style={styles.potentialBox}>
+            <Icon name="fish" size={13} color={Colors.primaryAccentDark} />
+            <Text style={styles.cleanPfzText}>{zone.potential}%</Text>
+          </View>
         </View>
       </Marker>
     );
@@ -214,87 +240,132 @@ const FishingZoneOverlay: React.FC<FishingZoneOverlayProps> = ({
   zones,
   selectedZoneId,
   activeRealisticRoute,
+  isNavigating = false,
+  top3ZoneIds = [],
   onZonePress,
 }) => {
-  return <>{renderFishingZoneElements(zones, selectedZoneId, onZonePress, activeRealisticRoute)}</>;
+  return (
+    <>
+      {renderFishingZoneElements(
+        zones,
+        selectedZoneId,
+        onZonePress,
+        activeRealisticRoute,
+        isNavigating,
+        top3ZoneIds
+      )}
+    </>
+  );
 };
 
 const styles = StyleSheet.create({
-  waypointMarker: {
+  // Google Maps Style Source Pin (Green on Land)
+  sourcePinContainer: {
+    alignItems: 'center',
+  },
+  sourcePin: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    backgroundColor: '#059669', // Emerald green
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: BorderRadius.sm,
     gap: 4,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
-    elevation: 5,
+    elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 3,
   },
-  originMarker: {
-    backgroundColor: '#0A2540', // Deep Navy
-  },
-  fairwayMarker: {
-    backgroundColor: '#0284C7', // Maritime Ocean Blue
-  },
-  shelfMarker: {
-    backgroundColor: '#0D9488', // Teal Bathymetric
-  },
-  waypointText: {
+  sourcePinText: {
     ...Typography.micro,
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 10,
+    fontWeight: '800',
+    fontSize: 11,
   },
-  pfzMarker: {
+  sourcePinStem: {
+    width: 3,
+    height: 6,
+    backgroundColor: '#059669',
+  },
+
+  // Google Maps Style Destination Pin (Red/Gold in Ocean)
+  destPinContainer: {
+    alignItems: 'center',
+  },
+  destPin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DC2626', // Red navigation target
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.sm,
+    gap: 5,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+  },
+  destPinText: {
+    ...Typography.micro,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 11,
+  },
+  destPinStem: {
+    width: 3,
+    height: 6,
+    backgroundColor: '#DC2626',
+  },
+
+  // Clean Browse Mode Top 3 Badge
+  cleanPfzMarker: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderWidth: 1.5,
-    borderColor: Colors.primaryAccent,
-    gap: 4,
-    elevation: 3,
+    borderRadius: BorderRadius.pill,
+    paddingVertical: 2,
+    paddingRight: 8,
+    paddingLeft: 2,
+    borderWidth: 1.8,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    gap: 4,
   },
-  pfzMarkerSelected: {
-    backgroundColor: Colors.primaryAccent,
-    borderColor: '#059669',
-    elevation: 6,
+  cleanPfzMarkerSelected: {
+    borderWidth: 2.5,
+    transform: [{ scale: 1.08 }],
+    elevation: 8,
   },
-  pfzMarkerText: {
-    ...Typography.chip,
-    color: Colors.textPrimary,
-    fontWeight: '700',
+  rankTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.pill,
   },
-  pfzMarkerTextSelected: {
+  rankTagText: {
     color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
-  depthBadge: {
-    backgroundColor: '#E8F5F2',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 3,
+  potentialBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
-  depthBadgeSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  depthBadgeText: {
+  cleanPfzText: {
     ...Typography.micro,
-    color: Colors.primaryAccentDark,
-    fontWeight: '700',
-  },
-  depthBadgeTextSelected: {
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 11,
   },
 });
 

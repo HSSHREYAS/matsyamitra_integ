@@ -9,7 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import { LanguageProvider } from './src/i18n';
 
-LogBox.ignoreAllLogs();
+// LogBox disabled to see redbox
 
 function App(): React.JSX.Element {
   return (

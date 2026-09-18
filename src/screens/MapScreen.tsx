@@ -22,7 +22,7 @@ import { renderFishingZoneElements } from '../components/map/FishingZoneOverlay'
 import { renderRiskZoneElements } from '../components/map/RiskZoneOverlay';
 import FishingBottomSheet from '../components/map/FishingBottomSheet';
 import RiskBottomSheet from '../components/map/RiskBottomSheet';
-import Top3ZoneDrawer from '../components/map/Top3ZoneDrawer';
+import FishermanRouteView from '../components/map/FishermanRouteView';
 import LocationSelectorModal from '../components/home/LocationSelectorModal';
 import {
   mockRiskZones,
@@ -68,6 +68,7 @@ const MapScreen: React.FC = () => {
   const [isSatellite, setIsSatellite] = useState(false);
   const [isPortModalVisible, setIsPortModalVisible] = useState(false);
   const [sheetSnapIndex, setSheetSnapIndex] = useState<number>(0);
+  const [isNavigating, setIsNavigating] = useState(false); // Tracks Google Maps style navigation state
   const mapRef = useRef<MapView>(null);
 
   // Active departure port (synced with userProfile or fallback to Malpe KARN_018)
@@ -258,7 +259,6 @@ const MapScreen: React.FC = () => {
   const handleSelectRecommendedZone = useCallback((rec: RecommendedPfzZone) => {
     setSelectedFishingZone(rec.zone);
     frameRoute(rec.realisticRoute);
-    setSheetSnapIndex(1);
   }, [frameRoute]);
 
   const handleZoomIn = async () => {
@@ -328,7 +328,6 @@ const MapScreen: React.FC = () => {
       targetPfzCoords: zone.center,
     });
     frameRoute(route);
-    setSheetSnapIndex(1);
   }, [activePortId, activePortName, departurePortCoords, frameRoute]);
 
   const handleRiskZonePress = useCallback((zone: RiskZone) => {
@@ -343,52 +342,56 @@ const MapScreen: React.FC = () => {
     <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.cardBackground} />
 
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <View style={styles.leftAction}>
-          <Icon name="compass-outline" size={22} color={Colors.primaryAccent} />
-        </View>
-
-        <View style={styles.titleContainer}>
-          <View style={styles.titleRow}>
-            <Text style={styles.topBarTitle}>Marine Chartplotter</Text>
-            <View style={styles.chartTag}>
-              <Text style={styles.chartTagText}>ECDIS</Text>
-            </View>
+      {/* =========================================================================
+          TOP BAR (HIDDEN WHEN NAVIGATING)
+      ========================================================================= */}
+      {!isNavigating && (
+        <View style={styles.topBar}>
+          <View style={styles.leftAction}>
+            <Icon name="compass-outline" size={22} color={Colors.primaryAccent} />
           </View>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setIsPortModalVisible(true)}
-            style={styles.subStatusRow}>
-            <View
-              style={[
-                styles.liveDot,
-                { backgroundColor: isOnline ? Colors.safe : Colors.caution },
-              ]}
-            />
-            <Text style={styles.subStatusText}>
-              Departure: <Text style={styles.portHighlight}>{activePortName}</Text>
-            </Text>
-            <Icon name="menu-down" size={16} color={Colors.oceanBlue} />
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.topActionsRight}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setIsSatellite(!isSatellite)}
-            style={[styles.actionIconBtn, isSatellite && styles.actionIconBtnActive]}>
-            <Icon
-              name={isSatellite ? 'earth' : 'map-clock'}
-              size={20}
-              color={isSatellite ? '#FFFFFF' : Colors.oceanBlue}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} onPress={handleRefresh} style={styles.actionIconBtn}>
-            <Icon name="refresh" size={20} color={Colors.primaryAccent} />
-          </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            <View style={styles.titleRow}>
+              <Text style={styles.topBarTitle}>Marine Chartplotter</Text>
+              <View style={styles.chartTag}>
+                <Text style={styles.chartTagText}>ECDIS</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsPortModalVisible(true)}
+              style={styles.subStatusRow}>
+              <View
+                style={[
+                  styles.liveDot,
+                  { backgroundColor: isOnline ? Colors.safe : Colors.caution },
+                ]}
+              />
+              <Text style={styles.subStatusText}>
+                Departure: <Text style={styles.portHighlight}>{activePortName}</Text>
+              </Text>
+              <Icon name="menu-down" size={16} color={Colors.oceanBlue} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.topActionsRight}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsSatellite(!isSatellite)}
+              style={[styles.actionIconBtn, isSatellite && styles.actionIconBtnActive]}>
+              <Icon
+                name={isSatellite ? 'earth' : 'map-clock'}
+                size={20}
+                color={isSatellite ? '#FFFFFF' : Colors.oceanBlue}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleRefresh} style={styles.actionIconBtn}>
+              <Icon name="refresh" size={20} color={Colors.primaryAccent} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Map View Container */}
       <View style={styles.mapContainer}>
@@ -417,34 +420,27 @@ const MapScreen: React.FC = () => {
               fishingZones,
               selectedFishingZone?.id,
               handleFishingZonePress,
-              activeRealisticRoute
+              activeRealisticRoute,
+              isNavigating,
+              top3RecommendedZones.map(r => r.zone.id)
             )}
           {activeMode === 1 &&
             renderRiskZoneElements(riskZones, handleRiskZonePress)}
         </MapView>
 
-        {/* Top 3 Recommended Zones Drawer (shown only in Fishing mode) */}
-        {activeMode === 0 && (
-          <Top3ZoneDrawer
-            recommendedZones={top3RecommendedZones}
-            selectedZoneId={selectedFishingZone?.id}
-            onSelectZone={handleSelectRecommendedZone}
-            departurePortName={activePortName}
-            onOpenPortPicker={() => setIsPortModalVisible(true)}
-          />
-        )}
-
         {/* Zone Toggle (Fishing vs Risk) */}
-        <ZoneToggle activeIndex={activeMode} onToggle={setActiveMode} />
+        {!isNavigating && <ZoneToggle activeIndex={activeMode} onToggle={setActiveMode} />}
 
         {/* Map Controls */}
-        <MapControls
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onMyLocation={handleMyLocation}
-          onToggleLayer={() => setIsSatellite(!isSatellite)}
-          isSatellite={isSatellite}
-        />
+        {!isNavigating && (
+          <MapControls
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onMyLocation={handleMyLocation}
+            onToggleLayer={() => setIsSatellite(!isSatellite)}
+            isSatellite={isSatellite}
+          />
+        )}
 
         {/* Risk Legend (only shown in Risk mode) */}
         {activeMode === 1 && (
@@ -473,14 +469,43 @@ const MapScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Bottom Sheet */}
+      {/* =========================================================================
+          FISHERMAN ROUTE VIEW (BOTTOM PANEL & NAV BAR)
+      ========================================================================= */}
       {activeMode === 0 ? (
-        <FishingBottomSheet
-          selectedZone={selectedFishingZone}
+        <FishermanRouteView
+          recommendedZones={top3RecommendedZones}
+          selectedZone={
+            top3RecommendedZones.find((z) => z.zone.id === selectedFishingZone?.id) ||
+            (selectedFishingZone && activeRealisticRoute
+              ? {
+                  zone: selectedFishingZone,
+                  rank: 1 as 1 | 2 | 3,
+                  score: 0,
+                  distanceNm: activeRealisticRoute.totalDistanceNm,
+                  realisticRoute: activeRealisticRoute,
+                  badgeLabel: 'Selected Zone',
+                  badgeLabelKn: 'ಆಯ್ಕೆಮಾಡಿದ ವಲಯ', // Selected Zone
+                  badgeVariant: 'teal',
+                  crowdLevel: activeCrowdInfo?.level || 'low',
+                  crowdLabel: 'Low Traffic',
+                  crowdLabelKn: activeCrowdInfo?.labelKn || 'ಕಡಿಮೆ ದೋಣಿಗಳು',
+                  vesselCountEstimate: activeCrowdInfo?.count || 0,
+                  distanceKm: activeRealisticRoute.totalDistanceKm,
+                }
+              : null)
+          }
           activeRoute={activeRealisticRoute}
+          isNavigating={isNavigating}
+          onSelectZone={handleSelectRecommendedZone}
+          onStartNavigation={() => {
+            setIsNavigating(true);
+            if (activeRealisticRoute) {
+              frameRoute(activeRealisticRoute);
+            }
+          }}
+          onExitNavigation={() => setIsNavigating(false)}
           departurePortName={activePortName}
-          crowdInfo={activeCrowdInfo}
-          sheetSnapIndex={sheetSnapIndex}
         />
       ) : (
         <RiskBottomSheet selectedZone={selectedRiskZone} />
