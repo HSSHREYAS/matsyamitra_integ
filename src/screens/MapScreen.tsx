@@ -234,6 +234,8 @@ const MapScreen: React.FC = () => {
     setActivePortId(portId);
     setActivePortName(cityName);
     setIsPortModalVisible(false);
+    setIsNavigating(false);
+    setSelectedFishingZone(null); // Clear stale route from previous port
 
     // Persist as user's profile port
     try {

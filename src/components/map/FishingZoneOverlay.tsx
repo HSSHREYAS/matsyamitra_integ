@@ -41,6 +41,8 @@ export function renderFishingZoneElements(
 ): React.ReactElement[] {
   const elements: React.ReactElement[] = [];
 
+  const portKeyStr = activeRealisticRoute?.originPortName ? `-${activeRealisticRoute.originPortName}` : '';
+
   // =========================================================================
   // MODE 1: ACTIVE NAVIGATION MODE (EXACTLY LIKE GOOGLE MAPS)
   // Everything disappears except Source, Destination, and the Route!
@@ -54,7 +56,7 @@ export function renderFishingZoneElements(
     if (selectedZone && selectedZone.coordinates.length > 0) {
       elements.push(
         <Polygon
-          key="nav-target-polygon"
+          key={`nav-target-polygon${portKeyStr}-${selectedZone.id}`}
           coordinates={selectedZone.coordinates}
           fillColor="rgba(15, 166, 136, 0.25)"
           strokeColor="#059669"
@@ -67,7 +69,7 @@ export function renderFishingZoneElements(
     // 2. Nautical Polyline Glow
     elements.push(
       <Polyline
-        key="nav-route-glow"
+        key={`nav-route-glow${portKeyStr}-${selectedZoneId || 'route'}`}
         coordinates={activeRealisticRoute.coordinates}
         strokeColor="rgba(2, 132, 199, 0.30)"
         strokeWidth={8}
@@ -78,7 +80,7 @@ export function renderFishingZoneElements(
     // 3. Nautical Core Route Track
     elements.push(
       <Polyline
-        key="nav-route-core"
+        key={`nav-route-core${portKeyStr}-${selectedZoneId || 'route'}`}
         coordinates={activeRealisticRoute.coordinates}
         strokeColor="#0284C7"
         strokeWidth={4}
@@ -90,7 +92,7 @@ export function renderFishingZoneElements(
     // 4. SOURCE MARKER (ON LAND AT HARBOR) — Google Maps style green pin
     elements.push(
       <Marker
-        key="nav-source-marker"
+        key={`nav-source-marker${portKeyStr}`}
         coordinate={originPoint}
         title={`${activeRealisticRoute.originPortName} Port`}
         description="Departure Berth (ಪ್ರಾರಂಭ ಸ್ಥಳ)"
@@ -111,7 +113,7 @@ export function renderFishingZoneElements(
     const targetCoord = selectedZone ? selectedZone.center : destinationPoint;
     elements.push(
       <Marker
-        key="nav-dest-marker"
+        key={`nav-dest-marker${portKeyStr}-${selectedZoneId || 'route'}`}
         coordinate={targetCoord}
         title={activeRealisticRoute.targetPfzName}
         description={`Target Zone • ${selectedZone?.potential || 90}% Potential`}
@@ -144,7 +146,7 @@ export function renderFishingZoneElements(
     const originPoint = activeRealisticRoute.coordinates[0];
     elements.push(
       <Marker
-        key="browse-departure-port"
+        key={`browse-departure-port${portKeyStr}`}
         coordinate={originPoint}
         title={`${activeRealisticRoute.originPortName} Port`}
         description="Active Departure Harbor (ಹಾರ್ಬರ್)"
@@ -162,19 +164,9 @@ export function renderFishingZoneElements(
     );
   }
 
-  // 2. Selected Route preview line (if a zone is highlighted in browse mode)
-  if (activeRealisticRoute && activeRealisticRoute.coordinates.length > 1) {
-    elements.push(
-      <Polyline
-        key="browse-route-preview"
-        coordinates={activeRealisticRoute.coordinates}
-        strokeColor={Colors.oceanBlue}
-        strokeWidth={3}
-        lineDashPattern={[10, 4]}
-        zIndex={4}
-      />
-    );
-  }
+  // NOTE: No preview polyline in browse mode — route lines only appear in full
+  // navigation mode (after the user taps "VIEW SEA ROUTE"). This keeps the
+  // map clean and uncluttered while browsing the Top 3 cards.
 
   // Filter to Top 3 zones for clean display
   const displayZones = top3ZoneIds.length > 0
@@ -186,7 +178,7 @@ export function renderFishingZoneElements(
     const isSelected = zone.id === selectedZoneId;
     elements.push(
       <Polygon
-        key={`poly-${zone.id}`}
+        key={`poly${portKeyStr}-${zone.id}`}
         coordinates={zone.coordinates}
         fillColor={isSelected ? 'rgba(15, 166, 136, 0.32)' : 'rgba(15, 166, 136, 0.16)'}
         strokeColor={isSelected ? '#059669' : Colors.primaryAccent}
@@ -207,7 +199,7 @@ export function renderFishingZoneElements(
 
     elements.push(
       <Marker
-        key={`top3-marker-${zone.id}`}
+        key={`top3-marker${portKeyStr}-${zone.id}`}
         coordinate={zone.center}
         title={`${zone.name} (${zone.potential}%)`}
         description="Tap to select sea route (ಮಾರ್ಗ ನೋಡಿ)"

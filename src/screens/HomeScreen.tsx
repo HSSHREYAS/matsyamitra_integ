@@ -31,7 +31,7 @@ import {
   getCanonicalCityName,
 } from '../services/api';
 import { useLanguage } from '../i18n';
-import { getUserProfile } from '../services/storage/userProfileStorage';
+import { getUserProfile, saveUserProfile } from '../services/storage/userProfileStorage';
 
 interface HomeScreenProps {
   navigation?: any;
@@ -87,8 +87,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setIsLocationModalVisible(true);
   };
 
-  const handleSelectLocation = (locationId: string) => {
+  const handleSelectLocation = async (locationId: string) => {
     selectLocation(locationId);
+    setIsLocationModalVisible(false);
+    
+    // Dynamically update the default port in the user's profile so the Map screen syncs!
+    const cityName = getCanonicalCityName(locationId);
+    try {
+      await saveUserProfile({
+        defaultPortId: locationId,
+        defaultPortName: cityName,
+      });
+    } catch {
+      // ignore
+    }
   };
 
   // Derive weather data: strictly live backend current state with GEE observations
