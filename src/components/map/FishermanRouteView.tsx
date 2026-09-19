@@ -198,10 +198,10 @@ export const FishermanRouteView: React.FC<FishermanRouteViewProps> = ({
           const isSelected = rec.zone.id === currentZone.zone.id;
           const tabLabel =
             rec.rank === 1
-              ? '① Best Match'
+              ? '① Top Pick 1'
               : rec.rank === 2
-              ? '② Fuel Saver'
-              : '③ High Catch';
+              ? '② Top Pick 2'
+              : '③ Top Pick 3';
           const badgeColor =
             rec.rank === 1
               ? '#D97706'

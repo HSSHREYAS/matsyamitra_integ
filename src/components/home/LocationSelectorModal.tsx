@@ -178,13 +178,9 @@ const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
     );
   };
 
+  if (!visible) return null;
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={handleClose}>
+    <View style={[StyleSheet.absoluteFill, { zIndex: 9999, elevation: 9999 }]}>
       <View style={styles.modalBackdrop}>
         <TouchableOpacity
           style={styles.backdropTouchable}
@@ -280,7 +276,7 @@ const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
           </SafeAreaView>
         </KeyboardAvoidingView>
       </View>
-    </Modal>
+    </View>
   );
 };
 

@@ -53,7 +53,7 @@ import {
   type RealisticSeaRoute,
 } from '../services/navigation/nauticalRoutingEngine';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 
 const ZOOM_STEP = 0.5;
 const MIN_DELTA = 0.02;
@@ -62,6 +62,7 @@ const MAX_LONGITUDE_DELTA = 30;
 
 const MapScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
   const [activeMode, setActiveMode] = useState(0); // 0 = Fishing, 1 = Risk
   const [region, setRegion] = useState<Region>(mapInitialRegion);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -395,38 +396,41 @@ const MapScreen: React.FC = () => {
 
       {/* Map View Container */}
       <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          initialRegion={mapInitialRegion}
-          mapType={isSatellite ? 'satellite' : 'standard'}
-          customMapStyle={isSatellite ? undefined : (marineChartMapStyle as any)}
-          toolbarEnabled={false}
-          zoomEnabled={true}
-          zoomControlEnabled={false}
-          zoomTapEnabled={true}
-          scrollEnabled={true}
-          pitchEnabled={true}
-          rotateEnabled={true}
-          scrollDuringRotateOrZoomEnabled={true}
-          showsScale={true}
-          showsCompass={true}
-          minZoomLevel={4}
-          maxZoomLevel={19}
-          moveOnMarkerPress={false}
-          onRegionChangeComplete={setRegion}>
-          {activeMode === 0 &&
-            renderFishingZoneElements(
-              fishingZones,
-              selectedFishingZone?.id,
-              handleFishingZonePress,
-              activeRealisticRoute,
-              isNavigating,
-              top3RecommendedZones.map(r => r.zone.id)
-            )}
-          {activeMode === 1 &&
-            renderRiskZoneElements(riskZones, handleRiskZonePress)}
-        </MapView>
+        {isFocused && (
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={mapInitialRegion}
+            mapType={isSatellite ? 'satellite' : 'standard'}
+            toolbarEnabled={false}
+            zoomEnabled={true}
+            zoomControlEnabled={false}
+            zoomTapEnabled={true}
+            scrollEnabled={true}
+            pitchEnabled={true}
+            rotateEnabled={true}
+            scrollDuringRotateOrZoomEnabled={true}
+            showsScale={true}
+            showsCompass={true}
+            minZoomLevel={4}
+            maxZoomLevel={19}
+            moveOnMarkerPress={false}
+            onRegionChangeComplete={setRegion}>
+            {activeMode === 0 &&
+              renderFishingZoneElements(
+                isNavigating && selectedFishingZone
+                  ? fishingZones.filter(z => z.id === selectedFishingZone.id)
+                  : fishingZones,
+                selectedFishingZone?.id,
+                handleFishingZonePress,
+                activeRealisticRoute,
+                isNavigating,
+                top3RecommendedZones.map(r => r.zone.id)
+              )}
+            {activeMode === 1 &&
+              renderRiskZoneElements(riskZones, handleRiskZonePress)}
+          </MapView>
+        )}
 
         {/* Zone Toggle (Fishing vs Risk) */}
         {!isNavigating && <ZoneToggle activeIndex={activeMode} onToggle={setActiveMode} />}
